@@ -11,13 +11,10 @@ from model import SymptomClassifier
 app = Flask(__name__)
 CORS(app) 
 
-# --- Global Artifacts and Configuration (Mirrors test_prediction.py) ---
-MODEL = None
-VECTORIZER = None
-ENCODER = None
-DISEASE_SYMPTOM_MAP = None
+# --- Global Artifacts and Configuration ---
+MODEL, VECTORIZER, ENCODER, DISEASE_SYMPTOM_MAP = None, None, None, None
 DEVICE = torch.device("cpu") 
-TEMPERATURE = 2.0 # T > 1 softens probabilities
+TEMPERATURE = 2.0
 
 # --- Medical History Data ---
 CHRONIC_DISEASES = {
@@ -45,7 +42,6 @@ GENETIC_DISEASES = {
     "Sickle cell anemia": ["joint_pain", "vomiting", "fatigue", "high_fever", "breathlessness", "swelling_joints", "pain_in_bones", "chest_pain", "swelling_extremeties"],
     "Cystic fibrosis": ["fatigue", "cough", "high_fever", "breathlessness", "mucoid_sputum", "rusty_sputum", "salty_taste_in_mouth", "weight_loss", "family_history"],
 }
-
 SEVERITY_LEVELS = {
     'chest_pain': 5, 'breathlessness': 5, 'heart_attack': 5, 'paralysis_(brain_hemorrhage)': 5, 'coma': 5, 'blood_in_sputum': 5, 'acute_liver_failure': 5, 'altered_sensorium': 5,
     'fast_heart_rate': 4, 'high_fever': 3, 'loss_of_balance': 3, 'unsteadiness': 3, 'weakness_of_one_body_side': 3, 'pain_behind_the_eyes': 3, 'dehydration': 3, 'vomiting': 3, 'chills': 3, 'joint_pain': 3, 'abdominal_pain': 3, 'diarrhoea': 3, 'yellowish_skin': 3, 'dark_urine': 3, 'swelling_joints': 3, 'painful_walking': 3, 'dizziness': 3, 'stiff_neck': 3, 'blurred_and_distorted_vision': 3, 'constipation': 3, 'sweating': 3,
@@ -53,170 +49,107 @@ SEVERITY_LEVELS = {
     'itching': 1, 'continuous_sneezing': 1, 'runny_nose': 1, 'acidity': 1, 'indigestion': 1
 }
 
-# --- CRITICAL PREPROCESSING & LOGIC FUNCTIONS ---
+# --- Logic Functions ---
 def clean_symptoms(symptom_string):
-    """Cleans the symptom text for the Vectorizer."""
-    if not isinstance(symptom_string, str):
-        symptom_string = ""
+    if not isinstance(symptom_string, str): return ""
     symptom_string = symptom_string.lower().replace('_', ' ').replace('-', ' ')
-    symptoms_list = re.split(r'[,\s]+', symptom_string)
-    return " ".join([s.strip() for s in symptoms_list if s.strip()])
+    return " ".join([s.strip() for s in re.split(r'[,\s]+', symptom_string) if s.strip()])
 
-def analyze_medical_history(collected_symptoms_set):
-    """Analyzes symptom overlap with known chronic/genetic diseases."""
+def analyze_medical_history(collected_symptoms_set, user_history_list):
     history_matches = {}
-    all_history = {**CHRONIC_DISEASES, **GENETIC_DISEASES}
-    
-    for condition, condition_symptoms in all_history.items():
+    all_history_symptoms = {**CHRONIC_DISEASES, **GENETIC_DISEASES}
+    for condition_name in user_history_list:
+        condition_symptoms = all_history_symptoms.get(condition_name)
+        if not condition_symptoms: continue
         condition_symptoms_set = set(s.replace('_', ' ') for s in condition_symptoms)
-        
         matching_symptoms = collected_symptoms_set.intersection(condition_symptoms_set)
-        
         if len(condition_symptoms_set) > 0:
             match_percentage = len(matching_symptoms) / len(condition_symptoms_set)
             if len(matching_symptoms) >= 2 and match_percentage >= 0.4:
-                history_matches[condition] = match_percentage
-                
+                history_matches[condition_name] = match_percentage
     return history_matches
 
 def get_next_question(probabilities, collected_symptoms, denied_symptoms):
-    """Suggests the next most informative symptom to ask about."""
     k_diseases = min(2, len(ENCODER.classes_))
     _, top_indices = torch.topk(probabilities, k=k_diseases)
     top_diseases = ENCODER.inverse_transform(top_indices.flatten().tolist())
-
     if len(top_diseases) < 2: return None
-
     disease1, disease2 = top_diseases[0], top_diseases[1]
-    symptoms1 = set(DISEASE_SYMPTOM_MAP.get(disease1, []))
-    symptoms2 = set(DISEASE_SYMPTOM_MAP.get(disease2, []))
-
-    all_asked_symptoms = set(collected_symptoms.keys()) | set(denied_symptoms)
-    
-    differentiating_symptoms = list(symptoms1.symmetric_difference(symptoms2))
-    unasked_differentiating = [s for s in differentiating_symptoms if s not in all_asked_symptoms]
-
-    if unasked_differentiating:
-        ranked_questions = sorted(unasked_differentiating, key=lambda s: SEVERITY_LEVELS.get(s, 0), reverse=True)
-        return ranked_questions[0]
-
-    unasked_top_disease = [s for s in symptoms1 if s not in all_asked_symptoms]
-    if unasked_top_disease:
-        ranked_fallback = sorted(unasked_top_disease, key=lambda s: SEVERITY_LEVELS.get(s, 0), reverse=True)
-        return ranked_fallback[0]
-
+    symptoms1, symptoms2 = set(DISEASE_SYMPTOM_MAP.get(disease1, [])), set(DISEASE_SYMPTOM_MAP.get(disease2, []))
+    all_asked = set(collected_symptoms.keys()) | set(denied_symptoms)
+    unasked = [s for s in list(symptoms1.symmetric_difference(symptoms2)) if s not in all_asked]
+    if unasked: return sorted(unasked, key=lambda s: SEVERITY_LEVELS.get(s, 0), reverse=True)[0]
+    unasked_fallback = [s for s in symptoms1 if s not in all_asked]
+    if unasked_fallback: return sorted(unasked_fallback, key=lambda s: SEVERITY_LEVELS.get(s, 0), reverse=True)[0]
     return None
 
 def load_artifacts():
-    """Loads all saved model components when the app starts."""
     global MODEL, VECTORIZER, ENCODER, DISEASE_SYMPTOM_MAP
-    print("Loading ML artifacts...")
     try:
         ENCODER = joblib.load('artifacts/label_encoder.pkl')
         VECTORIZER = joblib.load('artifacts/tfidf_vectorizer.pkl')
-        with open('artifacts/disease_symptom_map.json', 'r') as f:
-            DISEASE_SYMPTOM_MAP = json.load(f)
-        
-        num_classes = len(ENCODER.classes_)
-        input_size = len(VECTORIZER.vocabulary_) 
-        
-        MODEL = SymptomClassifier(input_size, num_classes).to(DEVICE)
+        with open('artifacts/disease_symptom_map.json', 'r') as f: DISEASE_SYMPTOM_MAP = json.load(f)
+        MODEL = SymptomClassifier(len(VECTORIZER.vocabulary_), len(ENCODER.classes_)).to(DEVICE)
         MODEL.load_state_dict(torch.load('artifacts/model_weights.pth', map_location=DEVICE))
         MODEL.eval()
-        
         print("✅ ML artifacts loaded successfully.")
     except Exception as e:
         print(f"❌ FAILED TO LOAD ARTIFACTS: {e}")
-        MODEL = None 
 
 @app.route('/predict', methods=['POST'])
 def predict():
     if not all([MODEL, VECTORIZER, ENCODER, DISEASE_SYMPTOM_MAP]):
         return jsonify({'error': 'Model artifacts not loaded.'}), 503
-        
     try:
         data = request.get_json()
         collected_symptoms = data.get('collected_symptoms', {})
         denied_symptoms = data.get('denied_symptoms', [])
         question_counter = data.get('question_counter', 0)
+        user_medical_history = data.get('user_medical_history', []) # Expects a list of strings
 
         if not collected_symptoms:
             return jsonify({'error': 'No symptoms provided.'}), 400
 
         symptoms_string = " ".join(collected_symptoms.keys())
         X_vector = VECTORIZER.transform([symptoms_string]).toarray()
-
         for symptom, severity in collected_symptoms.items():
             if symptom in VECTORIZER.vocabulary_:
-                symptom_index = VECTORIZER.vocabulary_[symptom]
-                X_vector[0, symptom_index] *= (1 + (severity - 1) * 0.5)
-
-        input_tensor = torch.tensor(X_vector, dtype=torch.float32).to(DEVICE)
-
+                X_vector[0, VECTORIZER.vocabulary_[symptom]] *= (1 + (severity - 1) * 0.5)
+        
         with torch.no_grad():
-            output = MODEL(input_tensor)
-            probabilities = F.softmax(output / TEMPERATURE, dim=1) 
-            
-        history_matches = analyze_medical_history(set(collected_symptoms.keys()))
+            probabilities = F.softmax(MODEL(torch.tensor(X_vector, dtype=torch.float32).to(DEVICE)) / TEMPERATURE, dim=1)
+        
+        history_matches = analyze_medical_history(set(collected_symptoms.keys()), user_medical_history)
         if history_matches:
             prob_list = probabilities.flatten().tolist()
             for i, disease_name in enumerate(ENCODER.classes_):
                 normalized_disease = disease_name.replace('_', ' ')
                 for history_condition, match_score in history_matches.items():
                     if normalized_disease.lower() == history_condition.replace('_', ' ').lower():
-                        boost = prob_list[i] * 0.15 * match_score
-                        prob_list[i] += boost
-            
-            total_prob = sum(prob_list)
-            renormalized_probs = [p / total_prob for p in prob_list]
-            probabilities = torch.tensor([renormalized_probs], dtype=torch.float32)
+                        prob_list[i] += prob_list[i] * 0.15 * match_score
+            probabilities = torch.tensor([[p / sum(prob_list) for p in prob_list]], dtype=torch.float32)
 
-        k = min(5, len(ENCODER.classes_))
-        top_probs, top_indices = torch.topk(probabilities, k=k)
+        top_probs, top_indices = torch.topk(probabilities, k=min(5, len(ENCODER.classes_)))
+        decoded_predictions = [{'disease': ENCODER.inverse_transform([idx.item()])[0], 'confidence': p.item() * 100} for p, idx in zip(top_probs.flatten(), top_indices.flatten())]
         
-        decoded_predictions = []
-        for prob, index in zip(top_probs.flatten(), top_indices.flatten()):
-            decoded_predictions.append({
-                'disease': ENCODER.inverse_transform([index.item()])[0],
-                'confidence': prob.item() * 100 
-            })
-            
-        top_predicted_disease = decoded_predictions[0]['disease']
-        top_confidence = decoded_predictions[0]['confidence']
+        top_predicted_disease, top_confidence = decoded_predictions[0]['disease'], decoded_predictions[0]['confidence']
         medical_history_note = None
-
         if history_matches:
             top_disease_normalized = top_predicted_disease.replace('_', ' ').lower()
             for condition, score in history_matches.items():
                 if top_disease_normalized == condition.replace('_', ' ').lower():
-                    medical_history_note = f"Symptoms show a {(score*100):.0f}% overlap with the chronic/genetic condition '{condition}'."
+                    medical_history_note = f"Note: Symptoms show a {(score*100):.0f}% overlap with your pre-existing condition: '{condition}'."
                     break
         
-        is_final = False
+        is_final = (top_confidence >= (98.0 if question_counter == 0 else 85.0) and question_counter > 0) or question_counter >= 7
         next_question = None
-        confidence_threshold = 98.0 if question_counter == 0 else 85.0
-
-        if top_confidence >= confidence_threshold and question_counter > 0:
-            is_final = True
-        elif question_counter >= 7:
-            is_final = True
-        else:
+        if not is_final:
             next_symptom_token = get_next_question(probabilities, collected_symptoms, denied_symptoms)
             if next_symptom_token:
-                next_question = {
-                    "token": next_symptom_token,
-                    "text": f"Are you experiencing '{next_symptom_token.replace('_', ' ')}'?"
-                }
-            else:
-                is_final = True
+                next_question = {"token": next_symptom_token, "text": f"Are you experiencing '{next_symptom_token.replace('_', ' ')}'?"}
+            else: is_final = True
 
-        return jsonify({
-            'predictions': decoded_predictions,
-            'is_final': is_final,
-            'next_question': next_question,
-            'medical_history_note': medical_history_note
-        })
-
+        return jsonify({'predictions': decoded_predictions, 'is_final': is_final, 'next_question': next_question, 'medical_history_note': medical_history_note})
     except Exception as e:
         print(f"Prediction Error: {e}")
         return jsonify({'error': 'Internal server error during prediction.'}), 500
