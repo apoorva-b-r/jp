@@ -72,7 +72,7 @@ function App() {
     }
   };
 
-  const shouldShowHeaderFooter = currentPage !== 'signup' && currentPage !== 'signin' && currentPage !== 'medical-history' && currentPage !== 'ai-assistant' && currentPage !== 'logged-symptoms';
+  const shouldShowHeaderFooter = currentPage !== 'signup' && currentPage !== 'signin' && currentPage !== 'medical-history' && currentPage !== 'ai-assistant' && currentPage !== 'logged-symptoms' && currentPage !== 'profile';
 
   return (
     <div className="flex flex-col h-screen w-screen">
