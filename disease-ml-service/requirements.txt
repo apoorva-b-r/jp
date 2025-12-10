@@ -1,8 +1,0 @@
-flask
-torch
-torchvision
-datasets
-pandas
-scikit-learn
-joblib
-scipy
