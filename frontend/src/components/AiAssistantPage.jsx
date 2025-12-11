@@ -11,6 +11,8 @@ export default function AiAssistantPage({ onNavigate }) {
   const [pendingQuestion, setPendingQuestion] = useState(null);
   const [isFinal, setIsFinal] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [mapsUrl, setMapsUrl] = useState(null);                 // NEW
+  const [recommendedDepartment, setRecommendedDepartment] = useState(null); // NEW
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -24,9 +26,8 @@ export default function AiAssistantPage({ onNavigate }) {
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
-    // If a session is already active and we're waiting for an answer
-    // to a specific follow-up question, we avoid using the free-text
-    // input and instead ask the user to use the quick answer buttons.
+    // If a session is already active and we're waiting for a follow-up answer,
+    // force the user to use the quick answer buttons.
     if (sessionId && pendingQuestion && !isFinal) {
       return;
     }
@@ -35,7 +36,7 @@ export default function AiAssistantPage({ onNavigate }) {
       id: Date.now(),
       text: inputValue,
       sender: 'user',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -44,7 +45,6 @@ export default function AiAssistantPage({ onNavigate }) {
     setApiError('');
 
     try {
-      // Start a new chat session with the backend
       const result = await chatAPI.start(userMessage.text);
 
       if (!result.success) {
@@ -58,19 +58,21 @@ export default function AiAssistantPage({ onNavigate }) {
 
       // Emergency or final response
       if (data.is_final) {
-        const finalText = data.message ||
-          'This session has been completed based on your symptoms.';
+        const finalText =
+          data.message || 'This session has been completed based on your symptoms.';
 
         const aiMessage = {
           id: Date.now() + 1,
           text: finalText,
           sender: 'ai',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
 
         setMessages(prev => [...prev, aiMessage]);
         setPendingQuestion(null);
         setIsFinal(true);
+        setMapsUrl(data.maps_url || null);                       // NEW
+        setRecommendedDepartment(data.recommended_department || null); // NEW
         setIsLoading(false);
         return;
       }
@@ -82,7 +84,7 @@ export default function AiAssistantPage({ onNavigate }) {
           id: Date.now() + 1,
           text: data.medical_history_note,
           sender: 'ai',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         });
       }
 
@@ -91,13 +93,16 @@ export default function AiAssistantPage({ onNavigate }) {
           id: Date.now() + 2,
           text: data.next_question.text,
           sender: 'ai',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         });
         setPendingQuestion(data.next_question);
       } else {
         setPendingQuestion(null);
       }
 
+      // Clear any previous final/maps info when receiving intermediate responses
+      setMapsUrl(null);
+      setRecommendedDepartment(null);
       setMessages(prev => [...prev, ...infoMessages]);
       setIsFinal(false);
       setIsLoading(false);
@@ -145,17 +150,19 @@ export default function AiAssistantPage({ onNavigate }) {
         break;
     }
 
-    // Add user's structured answer as a message
     const answerText =
       answerType === 'no'
         ? `No, I am not experiencing "${pendingQuestion.token.replace(/_/g, ' ')}".`
-        : `Yes (${answerType.split('-')[1]}), I am experiencing "${pendingQuestion.token.replace(/_/g, ' ')}".`;
+        : `Yes (${answerType.split('-')[1]}), I am experiencing "${pendingQuestion.token.replace(
+          /_/g,
+          ' '
+        )}".`;
 
     const userMessage = {
       id: Date.now(),
       text: answerText,
       sender: 'user',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -177,19 +184,21 @@ export default function AiAssistantPage({ onNavigate }) {
       const data = result.data;
 
       if (data.is_final) {
-        const finalText = data.message ||
-          'This session has been completed based on your answers.';
+        const finalText =
+          data.message || 'This session has been completed based on your answers.';
 
         const aiMessage = {
           id: Date.now() + 1,
           text: finalText,
           sender: 'ai',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
 
         setMessages(prev => [...prev, aiMessage]);
         setPendingQuestion(null);
         setIsFinal(true);
+        setMapsUrl(data.maps_url || null);                          // NEW
+        setRecommendedDepartment(data.recommended_department || null); // NEW
         setIsLoading(false);
         return;
       }
@@ -201,19 +210,20 @@ export default function AiAssistantPage({ onNavigate }) {
           id: Date.now() + 2,
           text: data.medical_history_note,
           sender: 'ai',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         });
       }
 
       if (data.next_question) {
-        const isSameQuestion = pendingQuestion && data.next_question.token === pendingQuestion.token;
+        const isSameQuestion =
+          pendingQuestion && data.next_question.token === pendingQuestion.token;
 
         if (!isSameQuestion) {
           infoMessages.push({
             id: Date.now() + 3,
             text: data.next_question.text,
             sender: 'ai',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           });
         }
 
@@ -222,6 +232,9 @@ export default function AiAssistantPage({ onNavigate }) {
         setPendingQuestion(null);
       }
 
+      // Clear any previous final/maps info when receiving intermediate responses
+      setMapsUrl(null);
+      setRecommendedDepartment(null);
       setMessages(prev => [...prev, ...infoMessages]);
       setIsFinal(false);
       setIsLoading(false);
@@ -243,7 +256,7 @@ export default function AiAssistantPage({ onNavigate }) {
     { id: 'ai-assistant', label: 'AI Assistant', icon: MessageSquare },
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'medical-history', label: 'Medical History', icon: FileText },
-    { id: 'logged-symptoms', label: 'Logged Symptoms', icon: Activity }
+    { id: 'logged-symptoms', label: 'Logged Symptoms', icon: Activity },
   ];
 
   return (
@@ -271,8 +284,8 @@ export default function AiAssistantPage({ onNavigate }) {
                   <button
                     onClick={() => handleTabClick(tab.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id
-                      ? 'bg-surface text-secondary'
-                      : 'text-muted hover:bg-surface'
+                        ? 'bg-surface text-secondary'
+                        : 'text-muted hover:bg-surface'
                       }`}
                   >
                     <Icon size={20} />
@@ -286,7 +299,7 @@ export default function AiAssistantPage({ onNavigate }) {
 
         <div className="p-4 border-t border-transparent">
           <button
-            onClick={() => onNavigate("home")}
+            onClick={() => onNavigate('home')}
             className="w-full px-4 py-2 text-sm text-primary bg-transparent hover:bg-surface rounded-lg transition-colors"
           >
             Logout
@@ -305,9 +318,11 @@ export default function AiAssistantPage({ onNavigate }) {
               </div>
               <h2 className="text-3xl mb-3 text-primary">Your AI Healthcare Assistant</h2>
               <p className="text-muted mb-8">
-                I'm here to help you understand your symptoms and provide preliminary guidance.
-                Ask me anything about your health concerns, and I'll do my best to assist you.
+                I&apos;m here to help you understand your symptoms and provide preliminary
+                guidance. Ask me anything about your health concerns, and I&apos;ll do my best to
+                assist you.
               </p>
+              {/* ...existing cards content... */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                 <div className="card bg-surface p-4 rounded-lg">
                   <h3 className="text-sm text-secondary mb-1">Symptom Assessment</h3>
@@ -336,9 +351,9 @@ export default function AiAssistantPage({ onNavigate }) {
               </div>
               <div className="mt-8 p-4 bg-[#2f1f07] border border-transparent rounded-lg">
                 <p className="text-xs text-highlight">
-                  <strong>Important:</strong> This AI assistant is not a replacement for professional
-                  medical advice, diagnosis, or treatment. Always consult with qualified healthcare
-                  providers for medical concerns.
+                  <strong>Important:</strong> This AI assistant is not a replacement for
+                  professional medical advice, diagnosis, or treatment. Always consult with
+                  qualified healthcare providers for medical concerns.
                 </p>
               </div>
             </div>
@@ -350,12 +365,13 @@ export default function AiAssistantPage({ onNavigate }) {
               {messages.map(message => (
                 <div
                   key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
                 >
                   <div
                     className={`max-w-[70%] rounded-2xl px-4 py-3 ${message.sender === 'user'
-                      ? 'bg-surface text-white'
-                      : 'card text-primary'
+                        ? 'bg-surface text-white'
+                        : 'card text-primary'
                       }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.text}</p>
@@ -372,14 +388,33 @@ export default function AiAssistantPage({ onNavigate }) {
                 <div className="flex justify-start">
                   <div className="max-w-[70%] rounded-2xl px-4 py-3 card">
                     <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-muted rounded-full animate-bounce"></span>
-                      <span className="w-2 h-2 bg-muted rounded-full animate-bounce delay-100"></span>
-                      <span className="w-2 h-2 bg-muted rounded-full animate-bounce delay-200"></span>
+                      <span className="w-2 h-2 bg-muted rounded-full animate-bounce" />
+                      <span className="w-2 h-2 bg-muted rounded-full animate-bounce delay-100" />
+                      <span className="w-2 h-2 bg-muted rounded-full animate-bounce delay-200" />
                     </div>
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
+
+              {/* NEW: Maps button after final recommendation */}
+              {isFinal && mapsUrl && (
+                <div className="max-w-4xl mx-auto mt-4 p-4">
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold"
+                  >
+                    Find Nearby Hospitals
+                  </a>
+                  {recommendedDepartment && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Department: {recommendedDepartment}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -451,7 +486,9 @@ export default function AiAssistantPage({ onNavigate }) {
               />
               <button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim() || isLoading || (sessionId && pendingQuestion && !isFinal)}
+                disabled={
+                  !inputValue.trim() || isLoading || (sessionId && pendingQuestion && !isFinal)
+                }
                 className="px-6 py-3 bg-primary text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <Send size={18} />
@@ -459,7 +496,8 @@ export default function AiAssistantPage({ onNavigate }) {
               </button>
             </div>
             <p className="text-xs text-muted mt-2 text-center">
-              Remember: This is an AI assistant and not a substitute for professional medical advice
+              Remember: This is an AI assistant and not a substitute for professional medical
+              advice
             </p>
           </div>
         </div>

@@ -9,7 +9,7 @@ const FLASK_API_URL = process.env.FLASK_API_URL || 'http://localhost:5001';
 
 // Emergency symptoms that trigger immediate high urgency
 const EMERGENCY_SYMPTOMS = [
-  'chest pain', 'severe chest pain', 'breathlessness', 'severe breathlessness',
+  'chest pain', 'severe chest pain', 'severe breathlessness',
   'unconscious', 'unconsciousness', 'severe bleeding', 'blood in sputum',
   'altered sensorium', 'paralysis', 'stroke', 'seizure', 'cardiac arrest',
   'heart attack', 'difficulty breathing', 'cannot breathe'
@@ -63,6 +63,10 @@ router.post('/start', authenticateToken, async (req, res) => {
         [session.session_id, Object.keys(collected_symptoms), [], 100.0, 'Emergency Medicine']
       );
 
+      // NEW: build Google Maps URL using user's pincode if available
+      const userPincode = await getUserPincodeByUserId(user_id);
+      const maps_url = generateMapsUrl('Emergency Medicine', userPincode);
+
       return res.json({
         session_id: session.session_id,
         is_emergency: true,
@@ -70,7 +74,8 @@ router.post('/start', authenticateToken, async (req, res) => {
         recommended_department: 'Emergency Medicine',
         message: '⚠️ EMERGENCY: Please seek immediate medical attention!',
         next_question: null,
-        is_final: true
+        is_final: true,
+        maps_url
       });
     }
 
@@ -212,13 +217,18 @@ router.post('/continue', authenticateToken, async (req, res) => {
         [Object.keys(collected_symptoms), questions_asked, session_id]
       );
 
+      // NEW: build Google Maps URL using user's pincode if available
+      const userPincode = await getUserPincodeByUserId(req.user.user_id);
+      const maps_url = generateMapsUrl('Emergency Medicine', userPincode);
+
       return res.json({
         session_id,
         is_emergency: true,
         urgency_level: 'EMERGENCY',
         recommended_department: 'Emergency Medicine',
         message: '⚠️ EMERGENCY: Please seek immediate medical attention!',
-        is_final: true
+        is_final: true,
+        maps_url
       });
     }
 
@@ -340,6 +350,55 @@ function checkEmergency(symptoms) {
   );
 }
 
+// Helper to generate Google Maps search URL
+function generateMapsUrl(department, pincode) {
+  const deptLabel = (department || 'hospital').trim();
+  const baseQuery = encodeURIComponent(`${deptLabel} hospitals`);
+
+  if (pincode) {
+    const safePin = encodeURIComponent(String(pincode));
+    return `https://www.google.com/maps/search/${baseQuery}+near+${safePin}`;
+  }
+
+  return `https://www.google.com/maps/search/${baseQuery}`;
+}
+
+// Get pincode from users table by user_id
+async function getUserPincodeByUserId(user_id) {
+  try {
+    const result = await pool.query(
+      'SELECT pincode FROM users WHERE user_id = $1 LIMIT 1',
+      [user_id]
+    );
+    if (result.rows.length > 0) {
+      return result.rows[0].pincode || null;
+    }
+  } catch (err) {
+    console.warn('Could not fetch user pincode by user_id:', err.message);
+  }
+  return null;
+}
+
+// Get pincode via session_id -> users join
+async function getUserPincodeBySessionId(session_id) {
+  try {
+    const result = await pool.query(
+      `SELECT u.pincode
+         FROM chat_sessions cs
+         JOIN users u ON u.user_id = cs.user_id
+        WHERE cs.session_id = $1
+        LIMIT 1`,
+      [session_id]
+    );
+    if (result.rows.length > 0) {
+      return result.rows[0].pincode || null;
+    }
+  } catch (err) {
+    console.warn('Could not fetch user pincode by session_id:', err.message);
+  }
+  return null;
+}
+
 async function callMLPrediction(collected_symptoms, denied_symptoms, question_counter, medicalHistory) {
   try {
     const response = await axios.post(`${FLASK_API_URL}/predict`, {
@@ -393,6 +452,10 @@ async function finalizeSession(session_id, predicted_disease, confidence) {
     ? predicted_disease.replace(/_/g, ' ')
     : predicted_disease;
 
+  // NEW: look up user pincode from this session and build maps URL
+  const userPincode = await getUserPincodeBySessionId(session_id);
+  const maps_url = generateMapsUrl(department, userPincode);
+
   return {
     session_id,
     is_final: true,
@@ -400,7 +463,8 @@ async function finalizeSession(session_id, predicted_disease, confidence) {
     recommended_department: department,
     urgency_level: urgency,
     confidence: confidence,
-    message: `Our preliminary diagnosis is ${readableDisease}. We recommend consulting ${department}. Urgency level: ${urgency}.`
+    message: `Our preliminary diagnosis is ${readableDisease}. We recommend consulting ${department}. Urgency level: ${urgency}.`,
+    maps_url
   };
 }
 
