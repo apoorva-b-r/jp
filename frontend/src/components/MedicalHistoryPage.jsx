@@ -354,43 +354,43 @@ export function MedicalHistoryPage({ onSkip, onSubmit }) {
   };
 
   const diseaseCardClasses = (category, disease) =>
-    `p-4 border rounded-lg cursor-pointer transition-all ${isSelected(category, disease)
-      ? 'bg-green-50 border-green-500 shadow-md'
-      : 'bg-white border-gray-300 hover:bg-gray-100'
+    `p-4 border rounded-2xl cursor-pointer transition-all duration-300 ${isSelected(category, disease)
+      ? 'bg-[var(--color-primary)] border-[var(--color-primary)] shadow-[0_6px_18px_rgba(22,34,102,0.12)] text-primary'
+      : 'bg-input border-[#D0E6FD]/20 hover:bg-surface text-secondary'
     }`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F0F9FF] via-white to-[#ECFDF5] py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-black py-12 px-4 sm:px-6 lg:px-8 text-secondary">
       <div className="max-w-3xl mx-auto">
 
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
+        <div className="card rounded-2xl shadow-xl p-8 backdrop-blur-md">
           <div className="text-center mb-8">
-            <Activity className="w-12 h-12 text-[#0EA5E9] mb-4 mx-auto" />
-            <h2 className="text-gray-900 mb-3">Medical History</h2>
+            <Activity className="w-12 h-12 text-secondary mb-4 mx-auto" />
+            <h2 className="text-highlight mb-3">Medical History</h2>
 
-            <div className="bg-[#ECFDF5] border border-[#D1FAE5] rounded-lg p-4 flex items-start gap-3">
-              <Shield className="w-5 h-5 text-[#10B981] flex-shrink-0 mt-0.5" />
-              <p className="text-gray-700 text-left">
+            <div className="bg-surface border border-transparent rounded-lg p-4 flex items-start gap-3">
+              <Shield className="w-5 h-5 text-highlight flex-shrink-0 mt-0.5" />
+              <p className="text-secondary/90 text-left">
                 This helps us understand your health better. Optional, can be added later.
               </p>
             </div>
           </div>
 
           {apiError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{apiError}</p>
+            <div className="mb-4 p-3 bg-[#2f0f0f] border border-transparent rounded-lg">
+              <p className="text-[#F1E4D1] text-sm">{apiError}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
 
             {loading && (
-              <div className="mb-2 text-sm text-gray-600">Loading your saved medical history...</div>
+              <div className="mb-2 text-sm text-[#D0E6FD]/80">Loading your saved medical history...</div>
             )}
 
             {/* CHRONIC DISEASES */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-3">
+              <label className="block text-[#F1E4D1] font-semibold mb-3">
                 Chronic Diseases
               </label>
 
@@ -408,7 +408,7 @@ export function MedicalHistoryPage({ onSkip, onSubmit }) {
                       onChange={() => toggleDisease('chronic', disease)}
                       className="hidden"
                     />
-                    <div key={disease} className="text-gray-600">
+                    <div key={disease} className="text-[#D0E6FD]">
                       <p className="font-medium">
                         {disease.replace(/_/g, " ")}
                       </p>
@@ -420,7 +420,7 @@ export function MedicalHistoryPage({ onSkip, onSubmit }) {
 
             {/* GENETIC DISEASES */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-3">
+              <label className="block text-[#F1E4D1] font-semibold mb-3">
                 Genetic Diseases
               </label>
 
@@ -437,7 +437,7 @@ export function MedicalHistoryPage({ onSkip, onSubmit }) {
                       onChange={() => toggleDisease('genetic', disease)}
                       className="hidden"
                     />
-                    <div key={disease} className="text-gray-600">
+                    <div key={disease} className="text-[#D0E6FD]">
                       <p className="font-medium">
                         {disease.replace(/_/g, " ")}
                       </p>
@@ -452,14 +452,14 @@ export function MedicalHistoryPage({ onSkip, onSubmit }) {
               <button
                 type="button"
                 onClick={onSkip}
-                className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="flex-1 py-3 bg-transparent text-secondary border border-[#D0E6FD]/20 rounded-2xl hover:bg-surface transition-all duration-300"
               >
                 Skip for Now
               </button>
 
               <button
                 type="submit"
-                className="flex-1 py-3 bg-[#10B981] text-white rounded-lg hover:bg-[#059669] transition-colors shadow-md"
+                className="flex-1 py-3 bg-[#162266] text-white rounded-2xl hover:bg-[#203a7a] transition-all duration-300 shadow-[0_8px_24px_rgba(22,34,102,0.12)]"
               >
                 Save and Continue
               </button>

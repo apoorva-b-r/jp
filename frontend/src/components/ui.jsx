@@ -2,57 +2,60 @@ import * as React from "react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-// Utility function for merging class names
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-// Button Component
-export function Button({ 
-  className, 
-  variant = "default", 
-  size = "default", 
+/* -----------------------------------------------
+   BUTTON
+------------------------------------------------*/
+export function Button({
+  className,
+  variant = "primary",
+  size = "md",
   children,
-  ...props 
+  ...props
 }) {
-  const baseStyles = "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
-  
+  const base =
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+
   const variants = {
-    default: "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500",
-    destructive: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
-    outline: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500",
-    secondary: "bg-gray-200 text-gray-900 hover:bg-gray-300 focus-visible:ring-gray-500",
-    ghost: "hover:bg-gray-100 text-gray-700 focus-visible:ring-gray-500",
-    link: "text-blue-600 underline-offset-4 hover:underline",
+    primary:
+      "bg-[var(--color-primary)] text-primary hover:bg-[var(--color-primary-hover)] shadow-[0_8px_24px_rgba(22,34,102,0.12)] focus-visible:ring-[var(--color-secondary)]",
+    secondary:
+      "bg-[#F1E4D1] text-black hover:brightness-95 border border-transparent focus-visible:ring-[#162266]",
+    outline:
+      "bg-transparent text-secondary border border-[#D0E6FD]/20 hover:bg-[var(--color-primary)/6] focus-visible:ring-[var(--color-secondary)]",
+    ghost:
+      "bg-transparent text-secondary hover:bg-[var(--color-primary)/6] focus-visible:ring-[var(--color-secondary)]",
+    destructive:
+      "bg-[#7a1622] text-white hover:bg-[#8f2230] focus-visible:ring-[#8f2230]",
+    link: "bg-transparent text-[#D0E6FD] underline-offset-4 hover:underline"
   };
-  
+
   const sizes = {
-    default: "h-9 px-4 py-2",
-    sm: "h-8 px-3 text-sm",
-    lg: "h-10 px-6",
-    icon: "h-9 w-9",
+    md: "h-11 px-5",
+    sm: "h-9 px-3 text-sm",
+    lg: "h-12 px-6 text-lg",
+    icon: "h-10 w-10"
   };
-  
+
   return (
-    <button
-      className={cn(baseStyles, variants[variant], sizes[size], className)}
-      {...props}
-    >
+    <button className={cn(base, variants[variant], sizes[size], className)} {...props}>
       {children}
     </button>
   );
 }
 
-// Input Component
+/* -----------------------------------------------
+   INPUT
+------------------------------------------------*/
 export function Input({ className, type = "text", ...props }) {
   return (
     <input
       type={type}
       className={cn(
-        "flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-sm transition-colors",
-        "placeholder:text-gray-400",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent",
-        "disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-11 w-full rounded-2xl bg-input text-secondary border border-[#D0E6FD]/20 px-4 py-2 placeholder:text-[rgba(208,230,253,0.7)] focus:outline-none focus:ring-2 focus:ring-[#D0E6FD] focus:border-transparent backdrop-blur-md",
         className
       )}
       {...props}
@@ -60,15 +63,14 @@ export function Input({ className, type = "text", ...props }) {
   );
 }
 
-// Textarea Component
+/* -----------------------------------------------
+   TEXTAREA
+------------------------------------------------*/
 export function Textarea({ className, ...props }) {
   return (
     <textarea
       className={cn(
-        "flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm",
-        "placeholder:text-gray-400",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent",
-        "disabled:cursor-not-allowed disabled:opacity-50",
+        "flex min-h-[100px] w-full rounded-2xl bg-input text-secondary border border-[#D0E6FD]/20 px-4 py-3 placeholder:text-[rgba(208,230,253,0.7)] focus:outline-none focus:ring-2 focus:ring-[#D0E6FD] backdrop-blur-md",
         className
       )}
       {...props}
@@ -76,87 +78,73 @@ export function Textarea({ className, ...props }) {
   );
 }
 
-// Label Component
+/* -----------------------------------------------
+   LABEL
+------------------------------------------------*/
 export function Label({ className, ...props }) {
   return (
     <label
-      className={cn(
-        "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-        className
-      )}
+      className={cn("text-sm font-medium text-highlight tracking-tight", className)}
       {...props}
     />
   );
 }
 
-// Card Components
+/* -----------------------------------------------
+   CARD
+------------------------------------------------*/
 export function Card({ className, ...props }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-gray-200 bg-white shadow-sm",
-        className
-      )}
+          "rounded-2xl bg-[#0A0F1F] text-secondary border border-[#F1E4D1]/8 shadow-lg backdrop-blur-lg transition-all duration-300",
+          className
+        )}
       {...props}
     />
   );
 }
 
 export function CardHeader({ className, ...props }) {
-  return (
-    <div
-      className={cn("flex flex-col space-y-1.5 p-6", className)}
-      {...props}
-    />
-  );
+  return <div className={cn("p-6", className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }) {
   return (
-    <h3
-      className={cn("text-2xl font-semibold leading-none tracking-tight", className)}
-      {...props}
-    />
+    <h3 className={cn("text-2xl font-semibold text-highlight tracking-tight", className)} {...props} />
   );
 }
 
 export function CardDescription({ className, ...props }) {
   return (
-    <p
-      className={cn("text-sm text-gray-600", className)}
-      {...props}
-    />
+    <p className={cn("text-sm text-secondary/90", className)} {...props} />
   );
 }
 
 export function CardContent({ className, ...props }) {
-  return (
-    <div className={cn("p-6 pt-0", className)} {...props} />
-  );
+  return <div className={cn("p-6 pt-0", className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }) {
-  return (
-    <div
-      className={cn("flex items-center p-6 pt-0", className)}
-      {...props}
-    />
-  );
+  return <div className={cn("flex items-center p-6 pt-0", className)} {...props} />;
 }
 
-// Badge Component
-export function Badge({ className, variant = "default", ...props }) {
-  const variants = {
-    default: "bg-blue-600 text-white hover:bg-blue-700",
-    secondary: "bg-gray-200 text-gray-900 hover:bg-gray-300",
-    destructive: "bg-red-600 text-white hover:bg-red-700",
-    outline: "border border-gray-300 text-gray-700",
+/* -----------------------------------------------
+   BADGE
+------------------------------------------------*/
+export function Badge({ className, variant = "primary", ...props }) {
+    const variants = {
+    primary: "bg-[var(--color-primary)] text-primary",
+    bone: "bg-[var(--color-highlight)] text-black",
+    outline: "border border-[#D0E6FD]/20 text-secondary",
+    muted: "bg-[var(--color-primary)]/12 text-secondary/80",
+    destructive: "bg-[#7a1622] text-white"
   };
-  
+
   return (
-    <div
+    <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors",
+        "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300",
         variants[variant],
         className
       )}
@@ -165,7 +153,9 @@ export function Badge({ className, variant = "default", ...props }) {
   );
 }
 
-// Checkbox Component
+/* -----------------------------------------------
+   CHECKBOX
+------------------------------------------------*/
 export function Checkbox({ className, checked, onCheckedChange, ...props }) {
   return (
     <input
@@ -173,9 +163,7 @@ export function Checkbox({ className, checked, onCheckedChange, ...props }) {
       checked={checked}
       onChange={(e) => onCheckedChange?.(e.target.checked)}
       className={cn(
-        "h-4 w-4 rounded border-gray-300 text-blue-600",
-        "focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-        "disabled:cursor-not-allowed disabled:opacity-50",
+        "h-5 w-5 rounded-md bg-input border border-[#D0E6FD]/20 text-[var(--color-primary)] focus:ring-2 focus:ring-[#D0E6FD] transition-all duration-300",
         className
       )}
       {...props}
@@ -183,14 +171,14 @@ export function Checkbox({ className, checked, onCheckedChange, ...props }) {
   );
 }
 
-// Select Component
+/* -----------------------------------------------
+   SELECT
+------------------------------------------------*/
 export function Select({ className, ...props }) {
   return (
     <select
       className={cn(
-        "flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-sm",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent",
-        "disabled:cursor-not-allowed disabled:opacity-50",
+        "h-11 w-full rounded-2xl bg-input border border-[#D0E6FD]/20 px-4 py-2 text-secondary focus:outline-none focus:ring-2 focus:ring-[#D0E6FD] transition-all duration-300",
         className
       )}
       {...props}
@@ -198,53 +186,35 @@ export function Select({ className, ...props }) {
   );
 }
 
-// Alert Component
-export function Alert({ className, variant = "default", ...props }) {
-  const variants = {
-    default: "bg-gray-100 text-gray-900 border-gray-200",
-    destructive: "bg-red-50 text-red-900 border-red-200",
-    success: "bg-green-50 text-green-900 border-green-200",
-    warning: "bg-yellow-50 text-yellow-900 border-yellow-200",
-    info: "bg-blue-50 text-blue-900 border-blue-200",
+/* -----------------------------------------------
+   ALERT
+------------------------------------------------*/
+export function Alert({ className, variant = "info", ...props }) {
+    const variants = {
+    info: "bg-surface text-secondary border-l-4 border-[var(--color-primary)]",
+    success: "bg-[#071622] text-secondary border-l-4 border-[#1f8a5a]",
+    warning: "bg-[#2f1a07] text-highlight border-l-4 border-[#f1c40f]",
+    destructive: "bg-[#2f0f0f] text-highlight border-l-4 border-[#a02a2a]",
+    default: "bg-surface text-secondary border-l-4 border-[var(--color-primary)]"
   };
-  
+
   return (
     <div
-      className={cn(
-        "relative w-full rounded-lg border p-4",
-        variants[variant],
-        className
-      )}
+      className={cn("rounded-xl p-4 text-sm backdrop-blur-md transition-all duration-300", variants[variant], className)}
       {...props}
     />
   );
 }
 
-export function AlertTitle({ className, ...props }) {
-  return (
-    <h5
-      className={cn("mb-1 font-medium leading-none tracking-tight", className)}
-      {...props}
-    />
-  );
-}
-
-export function AlertDescription({ className, ...props }) {
-  return (
-    <div
-      className={cn("text-sm [&_p]:leading-relaxed", className)}
-      {...props}
-    />
-  );
-}
-
-// Separator Component
+/* -----------------------------------------------
+   SEPARATOR
+------------------------------------------------*/
 export function Separator({ className, orientation = "horizontal", ...props }) {
   return (
     <div
       className={cn(
-        "shrink-0 bg-gray-200",
-        orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
+        "bg-[var(--color-secondary)]/10",
+        orientation === "horizontal" ? "h-px w-full" : "w-px h-full",
         className
       )}
       {...props}
@@ -252,60 +222,42 @@ export function Separator({ className, orientation = "horizontal", ...props }) {
   );
 }
 
-// Dialog/Modal Components (basic implementation)
+/* -----------------------------------------------
+   DIALOG (MODAL)
+------------------------------------------------*/
 export function Dialog({ open, onOpenChange, children }) {
   if (!open) return null;
-  
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div 
-        className="fixed inset-0 bg-black/50" 
+      <div
+        className="fixed inset-0 bg-black/70 backdrop-blur-lg"
         onClick={() => onOpenChange?.(false)}
       />
-      <div className="relative z-50">
-        {children}
-      </div>
+      <div className="relative z-50">{children}</div>
     </div>
   );
 }
 
-export function DialogContent({ className, children, ...props }) {
+export function DialogContent({ className, ...props }) {
   return (
     <div
       className={cn(
-        "bg-white rounded-lg shadow-lg p-6 w-full max-w-lg mx-4",
+        "max-w-lg mx-auto rounded-2xl bg-[#0A0F1F] text-[#D0E6FD] border border-[#F1E4D1]/8 shadow-2xl p-6 backdrop-blur-lg transition-all duration-300",
         className
       )}
       {...props}
-    >
-      {children}
-    </div>
+    />
   );
 }
 
 export function DialogHeader({ className, ...props }) {
-  return (
-    <div
-      className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)}
-      {...props}
-    />
-  );
+  return <div className={cn("flex flex-col space-y-1.5", className)} {...props} />;
 }
 
 export function DialogTitle({ className, ...props }) {
-  return (
-    <h2
-      className={cn("text-lg font-semibold leading-none tracking-tight", className)}
-      {...props}
-    />
-  );
+  return <h2 className={cn("text-xl font-semibold text-[#F1E4D1] tracking-tight", className)} {...props} />;
 }
 
 export function DialogDescription({ className, ...props }) {
-  return (
-    <p
-      className={cn("text-sm text-gray-600", className)}
-      {...props}
-    />
-  );
+  return <p className={cn("text-sm text-[#D0E6FD]/90", className)} {...props} />;
 }

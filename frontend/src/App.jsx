@@ -149,19 +149,19 @@ function App() {
 // Placeholder component for the dashboard (not part of the 4 requested pages)
 function DashboardPlaceholder({ username }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F0F9FF] to-[#ECFDF5] py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-surface text-primary">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200 text-center">
-          <h2 className="text-gray-900 mb-4">Welcome, {username}!</h2>
-          <p className="text-gray-600 mb-6">
+        <div className="card rounded-2xl shadow-xl p-8 border text-center">
+          <h2 className="text-primary mb-4">Welcome, {username}!</h2>
+          <p className="text-muted mb-6">
             You have successfully completed the onboarding process. The symptom input dashboard
             would appear here where you can start analyzing your symptoms and getting healthcare guidance.
           </p>
-          <div className="bg-[#F0F9FF] border border-[#BAE6FD] rounded-lg p-6">
-            <p className="text-gray-700">
+          <div className="bg-surface border border-[rgba(241,228,209,0.03)] rounded-lg p-6">
+            <p className="text-muted">
               This is a placeholder for the main symptom analysis dashboard. Features would include:
             </p>
-            <ul className="mt-4 space-y-2 text-left max-w-md mx-auto text-gray-700">
+            <ul className="mt-4 space-y-2 text-left max-w-md mx-auto text-muted">
               <li>• Symptom input and categorization</li>
               <li>• AI-powered preliminary assessments</li>
               <li>• Nearby hospital and specialist recommendations</li>

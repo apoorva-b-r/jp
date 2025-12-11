@@ -61,17 +61,17 @@ export default function LoggedSymptomsPage({ onNavigate }) {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-black text-secondary">
       {/* SIDEBAR */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-green-400 rounded-lg flex items-center justify-center">
-              <span className="text-white">JP</span>
+      <aside className="w-64 bg-[#0A0F1F] backdrop-blur-md border-r border-transparent flex flex-col">
+        <div className="p-6 border-b border-transparent">
+            <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-surface rounded-lg flex items-center justify-center">
+              <span className="text-primary">JP</span>
             </div>
             <div>
-              <h1 className="text-lg">Jiggly Pugffs</h1>
-              <p className="text-xs text-gray-500">Healthcare Assistant</p>
+              <h1 className="text-lg text-highlight">Jiggly Puffs</h1>
+              <p className="text-xs text-secondary/80">Healthcare Assistant</p>
             </div>
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function LoggedSymptomsPage({ onNavigate }) {
                 <li key={tab.id}>
                   <button
                     onClick={() => handleTabClick(tab.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeTab === tab.id ? 'bg-surface text-secondary' : 'text-secondary/80 hover:bg-surface'
                       }`}
                   >
                     <Icon size={20} />
@@ -96,10 +96,10 @@ export default function LoggedSymptomsPage({ onNavigate }) {
           </ul>
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-transparent">
           <button
             onClick={() => onNavigate("home")}
-            className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="w-full px-4 py-2 text-sm text-secondary bg-transparent hover:bg-surface rounded-2xl transition-all duration-300"
           >
             Logout
           </button>
@@ -110,46 +110,46 @@ export default function LoggedSymptomsPage({ onNavigate }) {
       <main className="flex-1 overflow-y-auto p-8">
         <div className="max-w-4xl mx-auto">
 
-          <h2 className="text-3xl text-gray-800 mb-2">Logged Symptoms</h2>
-          <p className="text-gray-600 mb-8">
+          <h2 className="text-3xl text-highlight mb-2">Logged Symptoms</h2>
+          <p className="text-secondary/90 mb-8">
             Chat-based AI diagnoses from your previous symptom checks.
           </p>
 
           {/* SHOW LOADING / ERROR / EMPTY / LIST */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <div className="text-gray-500">Loading sessions...</div>
+              <div className="text-secondary/80">Loading sessions...</div>
             </div>
           ) : error ? (
-            <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded">
+            <div className="p-4 bg-[#2f0f0f] border border-transparent text-highlight rounded-2xl">
               {error}
             </div>
           ) : sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <ClipboardList className="text-gray-400" size={40} />
+              <div className="w-20 h-20 bg-surface rounded-full flex items-center justify-center mb-4">
+                <ClipboardList className="text-secondary" size={40} />
               </div>
-              <h3 className="text-xl text-gray-700 mb-2">No chat history yet.</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="text-xl text-secondary/90 mb-2">No chat history yet.</h3>
+              <p className="text-sm text-secondary/80">
                 Start a conversation with the AI assistant to see your past diagnoses here.
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               {sessions.map(entry => (
-                <div key={entry.session_id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-lg transition-shadow">
+                <div key={entry.session_id} className="card rounded-2xl p-5 backdrop-blur-md">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Activity className="text-blue-600" size={18} />
-                      <span className="text-sm text-gray-500">{formatDate(entry.started_at)}</span>
-                    </div>
-                    <div className="text-sm text-gray-600">{entry.status}</div>
+                        <Activity className="text-secondary" size={18} />
+                        <span className="text-sm text-secondary/80">{formatDate(entry.started_at)}</span>
+                      </div>
+                      <div className="text-sm text-secondary/80">{entry.status}</div>
                   </div>
 
                   {/* Diagnosis based on session_state.predicted_department */}
                   <div className="mb-3">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Diagnosis</p>
-                    <p className="text-sm text-gray-800">
+                    <p className="text-xs text-secondary/80 uppercase tracking-wide">Diagnosis</p>
+                    <p className="text-sm text-secondary">
                       {entry.predicted_department
                         ? entry.predicted_department.replace(/_/g, ' ')
                         : 'N/A'}
@@ -158,7 +158,7 @@ export default function LoggedSymptomsPage({ onNavigate }) {
 
                   {/* Symptoms that the diagnosis was based on */}
                   <div className="mb-3">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Based on symptoms</p>
+                    <p className="text-xs text-secondary/80 uppercase tracking-wide">Based on symptoms</p>
                     {(() => {
                       const rawSymptoms = Array.isArray(entry.symptoms_collected)
                         ? entry.symptoms_collected
@@ -189,7 +189,7 @@ export default function LoggedSymptomsPage({ onNavigate }) {
 
                       if (items.length === 0) {
                         return (
-                          <p className="text-xs text-gray-500 mt-1">No specific symptoms recorded.</p>
+                          <p className="text-xs text-secondary/80 mt-1">No specific symptoms recorded.</p>
                         );
                       }
 
@@ -213,7 +213,7 @@ export default function LoggedSymptomsPage({ onNavigate }) {
 
                       if (displayItems.length === 0) {
                         return (
-                          <p className="text-xs text-gray-500 mt-1">No specific symptoms recorded.</p>
+                          <p className="text-xs text-secondary/80 mt-1">No specific symptoms recorded.</p>
                         );
                       }
 
@@ -222,7 +222,7 @@ export default function LoggedSymptomsPage({ onNavigate }) {
                           {displayItems.map((item) => (
                             <span
                               key={item.normalized}
-                              className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs border border-gray-200"
+                              className="px-2 py-1 rounded-full bg-surface text-secondary text-xs border border-transparent"
                             >
                               {item.normalized}
                             </span>
@@ -233,19 +233,19 @@ export default function LoggedSymptomsPage({ onNavigate }) {
                   </div>
 
                   <div className="flex items-center gap-4 mb-3">
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-xs text-blue-700 font-medium">Recommended Department</p>
-                      <p className="text-sm text-gray-800">{entry.final_department || 'N/A'}</p>
+                    <div className="p-3 bg-surface rounded-2xl">
+                        <p className="text-xs text-secondary font-medium">Recommended Department</p>
+                        <p className="text-sm text-secondary">{entry.final_department || 'N/A'}</p>
                     </div>
 
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-xs text-green-700 font-medium">Urgency</p>
-                      <p className="text-sm text-gray-800">{entry.final_urgency || 'N/A'}</p>
+                    <div className="p-3 bg-surface rounded-2xl">
+                      <p className="text-xs text-secondary font-medium">Urgency</p>
+                      <p className="text-sm text-secondary">{entry.final_urgency || 'N/A'}</p>
                     </div>
 
-                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-xs text-yellow-800 font-medium">Emergency</p>
-                      <p className="text-sm text-gray-800">{entry.is_emergency ? 'Yes' : 'No'}</p>
+                    <div className="p-3 bg-surface rounded-2xl">
+                      <p className="text-xs text-secondary font-medium">Emergency</p>
+                      <p className="text-sm text-secondary">{entry.is_emergency ? 'Yes' : 'No'}</p>
                     </div>
                   </div>
 
