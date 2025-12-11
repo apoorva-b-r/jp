@@ -7,7 +7,7 @@ async function setupDatabase() {
     host: 'localhost',
     database: 'postgres', // Connect to default database first
     user: 'postgres',
-    password: 'admin',
+    password: 'Hulasi007',
     port: 5432,
   });
 
@@ -24,7 +24,7 @@ async function setupDatabase() {
     } else {
       console.log('⚠️  Database "healthcare_db" does not exist.');
       console.log('🔄 Creating database...\n');
-      
+
       // Create database
       await defaultPool.query('CREATE DATABASE healthcare_db');
       console.log('✅ Database "healthcare_db" created successfully!\n');
@@ -41,17 +41,17 @@ async function setupDatabase() {
     host: 'localhost',
     database: 'healthcare_db',
     user: 'postgres',
-    password: 'admin',
+    password: 'Hulasi007',
     port: 5432,
   });
 
   try {
     console.log('🔄 Testing connection to healthcare_db...\n');
-    
+
     const result = await healthcarePool.query('SELECT NOW()');
     console.log('✅ Connected to healthcare_db successfully!');
     console.log(`   Server time: ${result.rows[0].now}\n`);
-    
+
     console.log('🎉 Setup complete! You can now start your server.\n');
 
   } catch (error) {

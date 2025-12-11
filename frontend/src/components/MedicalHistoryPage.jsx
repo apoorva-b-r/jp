@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Activity, Shield, ChevronRight } from "lucide-react";
+import { historyAPI } from '../services/api';
 
 // Convert your Python dicts into JS objects
 const CHRONIC_DISEASES = {
@@ -14,137 +15,137 @@ const CHRONIC_DISEASES = {
     "blurred_and_distorted_vision", "obesity", "excessive_hunger", "increased_appetite", "polyuria"
   ],
   Arthritis: [
-        "muscle_weakness",
-        "stiff_neck",
-        "swelling_joints",
-        "movement_stiffness",
-        "spinning_movements",
-        "loss_of_balance",
-        "unsteadiness",
-        "weakness_of_one_body_side"
-    ],
-    Chronic_cholestasis: [
-        "itching",
-        "vomiting",
-        "yellowish_skin",
-        "nausea",
-        "loss_of_appetite",
-        "abdominal_pain",
-        "yellowing_of_eyes"
-    ],
-    
-    Heart_attack: [
-        "vomiting",
-        "breathlessness",
-        "sweating",
-        "chest_pain"
-    ],
-    
-    Bronchial_Asthma: [
-        "fatigue",
-        "cough",
-        "high_fever",
-        "breathlessness",
-        "family_history",
-        "mucoid_sputum"
-    ],
-    
-    GERD: [
-        "stomach_pain",
-        "acidity",
-        "ulcers_on_tongue",
-        "vomiting",
-        "cough",
-        "chest_pain"
-    ],
-    
-    Peptic_ulcer_disease: [
-        "vomiting",
-        "loss_of_appetite",
-        "abdominal_pain",
-        "passage_of_gases",
-        "internal_itching"
-    ],
-    
-    Osteoarthristis: [
-        "joint_pain",
-        "neck_pain",
-        "knee_pain",
-        "hip_joint_pain",
-        "swelling_joints",
-        "painful_walking"
-    ],
-    
-    Hypothyroidism: [
-        "fatigue",
-        "weight_gain",
-        "cold_hands_and_feets",
-        "mood_swings",
-        "lethargy",
-        "dizziness",
-        "puffy_face_and_eyes",
-        "enlarged_thyroid",
-        "brittle_nails",
-        "swollen_extremeties",
-        "depression",
-        "irritability",
-        "abnormal_menstruation"
-    ],
-    
-    Hyperthyroidism: [
-        "fatigue",
-        "mood_swings",
-        "weight_loss",
-        "restlessness",
-        "sweating",
-        "diarrhoea",
-        "fast_heart_rate",
-        "excessive_hunger",
-        "muscle_weakness",
-        "irritability",
-        "abnormal_menstruation"
-    ],
-    
-    Hypoglycemia: [
-        "vomiting",
-        "fatigue",
-        "anxiety",
-        "sweating",
-        "headache",
-        "nausea",
-        "blurred_and_distorted_vision",
-        "excessive_hunger",
-        "drying_and_tingling_lips",
-        "slurred_speech",
-        "irritability",
-        "palpitations"
-    ],
-    
-    Psoriasis: [
-        "skin_rash",
-        "joint_pain",
-        "skin_peeling",
-        "silver_like_dusting",
-        "small_dents_in_nails",
-        "inflammatory_nails"
-    ],
-    
-    Varicose_veins: [
-        "fatigue",
-        "cramps",
-        "bruising",
-        "obesity",
-        "swollen_legs",
-        "swollen_blood_vessels",
-        "prominent_veins_on_calf"
-    ],
-    
-    Paralysis_brain_hemorrhage: [
-        "vomiting",
-        "headache",
-        "weakness_of_one_body_side",
-        "altered_sensorium"
-    ]
+    "muscle_weakness",
+    "stiff_neck",
+    "swelling_joints",
+    "movement_stiffness",
+    "spinning_movements",
+    "loss_of_balance",
+    "unsteadiness",
+    "weakness_of_one_body_side"
+  ],
+  Chronic_cholestasis: [
+    "itching",
+    "vomiting",
+    "yellowish_skin",
+    "nausea",
+    "loss_of_appetite",
+    "abdominal_pain",
+    "yellowing_of_eyes"
+  ],
+
+  Heart_attack: [
+    "vomiting",
+    "breathlessness",
+    "sweating",
+    "chest_pain"
+  ],
+
+  Bronchial_Asthma: [
+    "fatigue",
+    "cough",
+    "high_fever",
+    "breathlessness",
+    "family_history",
+    "mucoid_sputum"
+  ],
+
+  GERD: [
+    "stomach_pain",
+    "acidity",
+    "ulcers_on_tongue",
+    "vomiting",
+    "cough",
+    "chest_pain"
+  ],
+
+  Peptic_ulcer_disease: [
+    "vomiting",
+    "loss_of_appetite",
+    "abdominal_pain",
+    "passage_of_gases",
+    "internal_itching"
+  ],
+
+  Osteoarthristis: [
+    "joint_pain",
+    "neck_pain",
+    "knee_pain",
+    "hip_joint_pain",
+    "swelling_joints",
+    "painful_walking"
+  ],
+
+  Hypothyroidism: [
+    "fatigue",
+    "weight_gain",
+    "cold_hands_and_feets",
+    "mood_swings",
+    "lethargy",
+    "dizziness",
+    "puffy_face_and_eyes",
+    "enlarged_thyroid",
+    "brittle_nails",
+    "swollen_extremeties",
+    "depression",
+    "irritability",
+    "abnormal_menstruation"
+  ],
+
+  Hyperthyroidism: [
+    "fatigue",
+    "mood_swings",
+    "weight_loss",
+    "restlessness",
+    "sweating",
+    "diarrhoea",
+    "fast_heart_rate",
+    "excessive_hunger",
+    "muscle_weakness",
+    "irritability",
+    "abnormal_menstruation"
+  ],
+
+  Hypoglycemia: [
+    "vomiting",
+    "fatigue",
+    "anxiety",
+    "sweating",
+    "headache",
+    "nausea",
+    "blurred_and_distorted_vision",
+    "excessive_hunger",
+    "drying_and_tingling_lips",
+    "slurred_speech",
+    "irritability",
+    "palpitations"
+  ],
+
+  Psoriasis: [
+    "skin_rash",
+    "joint_pain",
+    "skin_peeling",
+    "silver_like_dusting",
+    "small_dents_in_nails",
+    "inflammatory_nails"
+  ],
+
+  Varicose_veins: [
+    "fatigue",
+    "cramps",
+    "bruising",
+    "obesity",
+    "swollen_legs",
+    "swollen_blood_vessels",
+    "prominent_veins_on_calf"
+  ],
+
+  Paralysis_brain_hemorrhage: [
+    "vomiting",
+    "headache",
+    "weakness_of_one_body_side",
+    "altered_sensorium"
+  ]
 
 
 };
@@ -158,127 +159,187 @@ const GENETIC_DISEASES = {
   Sickle_cell_anemia: [
     "joint_pain", "vomiting", "fatigue", "high_fever", "breathlessness", "swelling_joints"
   ],
-    Polycystic_kidney_disease: [
-        "vomiting",
-        "fatigue",
-        "high_fever",
-        "nausea",
-        "loss_of_appetite",
-        "abdominal_pain",
-        "back_pain",
-        "headache",
-        "blood_in_urine"
-    ],
-    
-    Cystic_fibrosis: [
-        "fatigue",
-        "cough",
-        "high_fever",
-        "breathlessness",
-        "mucoid_sputum",
-        "rusty_sputum",
-        "salty_taste_in_mouth",
-        "weight_loss",
-        "family_history"
-    ],
-    
-    Duchenne_muscular_dystrophy: [
-        "muscle_weakness",
-        "fatigue",
-        "weakness_in_limbs",
-        "movement_stiffness",
-        "loss_of_balance",
-        "unsteadiness",
-        "delayed_milestones",
-        "difficulty_walking"
-    ],
-    
-    Down_syndrome: [
-        "delayed_milestones",
-        "developmental_delays",
-        "weak_muscle_tone",
-        "short_stature",
-        "flat_facial_features",
-        "upward_slanting_eyes"
-    ],
-    
-    Huntingtons_disease: [
-        "movement_stiffness",
-        "spinning_movements",
-        "unsteadiness",
-        "weakness_of_one_body_side",
-        "altered_sensorium",
-        "mood_swings",
-        "depression",
-        "irritability",
-        "slurred_speech"
-    ],
-    
-    Marfan_syndrome: [
-        "joint_pain",
-        "weakness_in_limbs",
-        "chest_pain",
-        "breathlessness",
-        "blurred_and_distorted_vision",
-        "tall_stature",
-        "long_fingers",
-        "heart_problems"
-    ],
-    
-    Phenylketonuria: [
-        "developmental_delays",
-        "intellectual_disability",
-        "seizures",
-        "skin_rash",
-        "musty_odor",
-        "behavioral_problems"
-    ],
-    
-    Hemophilia: [
-        "joint_pain",
-        "bruising",
-        "continuous_bleeding",
-        "blood_in_urine",
-        "prolonged_bleeding",
-        "swelling_joints",
-        "internal_bleeding"
-    ],
-    
-    Turners_syndrome: [
-        "short_stature",
-        "delayed_puberty",
-        "webbed_neck",
-        "swelling_extremeties",
-        "heart_problems",
-        "kidney_problems"
-    ],
-    
-    Klinefelters_syndrome: [
-        "tall_stature",
-        "weak_muscle_tone",
-        "delayed_puberty",
-        "enlarged_breast_tissue",
-        "reduced_facial_hair",
-        "infertility"
-    ]
+  Polycystic_kidney_disease: [
+    "vomiting",
+    "fatigue",
+    "high_fever",
+    "nausea",
+    "loss_of_appetite",
+    "abdominal_pain",
+    "back_pain",
+    "headache",
+    "blood_in_urine"
+  ],
+
+  Cystic_fibrosis: [
+    "fatigue",
+    "cough",
+    "high_fever",
+    "breathlessness",
+    "mucoid_sputum",
+    "rusty_sputum",
+    "salty_taste_in_mouth",
+    "weight_loss",
+    "family_history"
+  ],
+
+  Duchenne_muscular_dystrophy: [
+    "muscle_weakness",
+    "fatigue",
+    "weakness_in_limbs",
+    "movement_stiffness",
+    "loss_of_balance",
+    "unsteadiness",
+    "delayed_milestones",
+    "difficulty_walking"
+  ],
+
+  Down_syndrome: [
+    "delayed_milestones",
+    "developmental_delays",
+    "weak_muscle_tone",
+    "short_stature",
+    "flat_facial_features",
+    "upward_slanting_eyes"
+  ],
+
+  Huntingtons_disease: [
+    "movement_stiffness",
+    "spinning_movements",
+    "unsteadiness",
+    "weakness_of_one_body_side",
+    "altered_sensorium",
+    "mood_swings",
+    "depression",
+    "irritability",
+    "slurred_speech"
+  ],
+
+  Marfan_syndrome: [
+    "joint_pain",
+    "weakness_in_limbs",
+    "chest_pain",
+    "breathlessness",
+    "blurred_and_distorted_vision",
+    "tall_stature",
+    "long_fingers",
+    "heart_problems"
+  ],
+
+  Phenylketonuria: [
+    "developmental_delays",
+    "intellectual_disability",
+    "seizures",
+    "skin_rash",
+    "musty_odor",
+    "behavioral_problems"
+  ],
+
+  Hemophilia: [
+    "joint_pain",
+    "bruising",
+    "continuous_bleeding",
+    "blood_in_urine",
+    "prolonged_bleeding",
+    "swelling_joints",
+    "internal_bleeding"
+  ],
+
+  Turners_syndrome: [
+    "short_stature",
+    "delayed_puberty",
+    "webbed_neck",
+    "swelling_extremeties",
+    "heart_problems",
+    "kidney_problems"
+  ],
+
+  Klinefelters_syndrome: [
+    "tall_stature",
+    "weak_muscle_tone",
+    "delayed_puberty",
+    "enlarged_breast_tissue",
+    "reduced_facial_hair",
+    "infertility"
+  ]
 
 };
 
 export function MedicalHistoryPage({ onSkip, onSubmit }) {
   const [formData, setFormData] = useState({
-    age: "",
-    allergies: "",
-    majorIllnesses: "",
-    selectedDiseases: [],
+    chronicDiseases: [],
+    geneticDiseases: [],
   });
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState('');
 
-  const toggleDisease = (diseaseName) => {
+  useEffect(() => {
+    let mounted = true;
+
+    const loadHistory = async () => {
+      setLoading(true);
+      setApiError('');
+      try {
+        const result = await historyAPI.get();
+        if (!mounted) return;
+        if (!result.success) {
+          setApiError(result.error || 'Failed to load medical history');
+          setLoading(false);
+          return;
+        }
+
+        const history = result.data.history;
+        if (!history) {
+          setLoading(false);
+          return;
+        }
+
+        const parseList = (val) => {
+          if (!val) return [];
+          // Try JSON first
+          try {
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) return parsed;
+          } catch (e) {
+            // ignore
+          }
+          // Fallback: comma separated string
+          return String(val)
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+        };
+
+        setFormData((prev) => ({
+          ...prev,
+          chronicDiseases: parseList(history.chronic_diseases),
+          geneticDiseases: parseList(history.genetic_diseases),
+        }));
+      } catch (err) {
+        console.error('Load medical history error:', err);
+        setApiError('Failed to load medical history');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadHistory();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const toggleDisease = (category, diseaseName) => {
     setFormData((prev) => {
-      const selected = prev.selectedDiseases.includes(diseaseName)
-        ? prev.selectedDiseases.filter((d) => d !== diseaseName)
-        : [...prev.selectedDiseases, diseaseName];
+      const key = category === 'chronic' ? 'chronicDiseases' : 'geneticDiseases';
+      const currentlySelected = prev[key] || [];
 
-      return { ...prev, selectedDiseases: selected };
+      const updated = currentlySelected.includes(diseaseName)
+        ? currentlySelected.filter((d) => d !== diseaseName)
+        : [...currentlySelected, diseaseName];
+
+      return { ...prev, [key]: updated };
     });
   };
 
@@ -287,13 +348,15 @@ export function MedicalHistoryPage({ onSkip, onSubmit }) {
     onSubmit(formData);
   };
 
-  const isSelected = (disease) => formData.selectedDiseases.includes(disease);
+  const isSelected = (category, disease) => {
+    const key = category === 'chronic' ? 'chronicDiseases' : 'geneticDiseases';
+    return (formData[key] || []).includes(disease);
+  };
 
-  const diseaseCardClasses = (disease) =>
-    `p-4 border rounded-lg cursor-pointer transition-all ${
-      isSelected(disease)
-        ? "bg-green-50 border-green-500 shadow-md"
-        : "bg-white border-gray-300 hover:bg-gray-100"
+  const diseaseCardClasses = (category, disease) =>
+    `p-4 border rounded-lg cursor-pointer transition-all ${isSelected(category, disease)
+      ? 'bg-green-50 border-green-500 shadow-md'
+      : 'bg-white border-gray-300 hover:bg-gray-100'
     }`;
 
   return (
@@ -313,7 +376,17 @@ export function MedicalHistoryPage({ onSkip, onSubmit }) {
             </div>
           </div>
 
+          {apiError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{apiError}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-8">
+
+            {loading && (
+              <div className="mb-2 text-sm text-gray-600">Loading your saved medical history...</div>
+            )}
 
             {/* CHRONIC DISEASES */}
             <div>
@@ -325,21 +398,21 @@ export function MedicalHistoryPage({ onSkip, onSubmit }) {
                 {Object.keys(CHRONIC_DISEASES).map((disease) => (
                   <div
                     key={disease}
-                    onClick={() => toggleDisease(disease)}
-                    className={diseaseCardClasses(disease)}
+                    onClick={() => toggleDisease('chronic', disease)}
+                    className={diseaseCardClasses('chronic', disease)}
                   >
                     {/* Hidden checkbox to track selection but not shown */}
                     <input
                       type="checkbox"
-                      checked={isSelected(disease)}
-                      onChange={() => toggleDisease(disease)}
+                      checked={isSelected('chronic', disease)}
+                      onChange={() => toggleDisease('chronic', disease)}
                       className="hidden"
                     />
                     <div key={disease} className="text-gray-600">
-                    <p className="font-medium">
-                      {disease.replace(/_/g, " ")}
-                    </p>
-                  </div>
+                      <p className="font-medium">
+                        {disease.replace(/_/g, " ")}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -355,20 +428,20 @@ export function MedicalHistoryPage({ onSkip, onSubmit }) {
                 {Object.keys(GENETIC_DISEASES).map((disease) => (
                   <div
                     key={disease}
-                    onClick={() => toggleDisease(disease)}
-                    className={diseaseCardClasses(disease)}
+                    onClick={() => toggleDisease('genetic', disease)}
+                    className={diseaseCardClasses('genetic', disease)}
                   >
                     <input
                       type="checkbox"
-                      checked={isSelected(disease)}
-                      onChange={() => toggleDisease(disease)}
+                      checked={isSelected('genetic', disease)}
+                      onChange={() => toggleDisease('genetic', disease)}
                       className="hidden"
                     />
                     <div key={disease} className="text-gray-600">
-                    <p className="font-medium">
-                      {disease.replace(/_/g, " ")}
-                    </p>
-                  </div>
+                      <p className="font-medium">
+                        {disease.replace(/_/g, " ")}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>

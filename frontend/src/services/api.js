@@ -1,129 +1,199 @@
 import axios from 'axios';
 
-// Base API configuration
-const API = axios.create({
-    baseURL: 'http://localhost:5000/api',
-    timeout: 10000,
+// Ensure this matches your backend server's address and port
+const API_URL = 'http://localhost:5000/api';
+
+const api = axios.create({
+    baseURL: API_URL,
     headers: {
-        'Content-Type': 'application/json'
-    }
+        'Content-Type': 'application/json',
+    },
 });
 
-// Request interceptor - attach token
-API.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
+// Add a request interceptor to include the auth token if it exists
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
     }
-);
+    return config;
+});
 
-// Response interceptor - handle errors
-API.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.clear();
-            window.location.href = '/signin';
-        }
-        return Promise.reject(error);
-    }
-);
-
-// ============= AUTH APIs =============
+// Auth-related API helpers used by SignUp / SignIn flows
 export const authAPI = {
-    signup: async (userData) => {
+    signup: async (payload) => {
         try {
-            const response = await API.post('/auth/signup', userData);
-            return { success: true, data: response.data };
+            const response = await api.post('/auth/register', payload);
+            return {
+                success: true,
+                data: response.data,
+            };
         } catch (error) {
-            return { 
-                success: false, 
-                error: error.response?.data?.error || 'Signup failed' 
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                'Failed to create account. Please try again.';
+
+            return {
+                success: false,
+                error: message,
             };
         }
     },
 
-    signin: async (credentials) => {
+    login: async (payload) => {
         try {
-            const response = await API.post('/auth/signin', credentials);
-            return { success: true, data: response.data };
-        } catch (error) {
-            return { 
-                success: false, 
-                error: error.response?.data?.error || 'Login failed' 
+            const response = await api.post('/auth/login', payload);
+            return {
+                success: true,
+                data: response.data,
             };
-        }
-    }
-};
-
-// ============= MEDICAL HISTORY APIs =============
-export const medicalAPI = {
-    saveMedicalHistory: async (data) => {
-        try {
-            const response = await API.post('/medical/medical-history', data);
-            return { success: true, data: response.data };
         } catch (error) {
-            return { 
-                success: false, 
-                error: error.response?.data?.error || 'Failed to save medical history' 
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                'Failed to sign in. Please check your credentials.';
+
+            return {
+                success: false,
+                error: message,
             };
         }
     },
 
-    getMedicalHistory: async (userId) => {
+    me: async () => {
         try {
-            const response = await API.get(`/medical/medical-history/${userId}`);
-            return { success: true, data: response.data };
+            const response = await api.get('/auth/me');
+            return {
+                success: true,
+                data: response.data,
+            };
         } catch (error) {
-            return { 
-                success: false, 
-                error: error.response?.data?.error || 'Failed to fetch medical history' 
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                'Failed to fetch profile.';
+
+            return {
+                success: false,
+                error: message,
             };
         }
-    }
+    },
 };
 
-// ============= CHAT APIs =============
+// Medical history API helpers
+export const historyAPI = {
+    save: async (payload) => {
+        try {
+            const response = await api.post('/history/save', payload);
+            return {
+                success: true,
+                data: response.data,
+            };
+        } catch (error) {
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                'Failed to save medical history.';
+
+            return {
+                success: false,
+                error: message,
+            };
+        }
+    },
+
+    get: async () => {
+        try {
+            const response = await api.get('/history/get');
+            return {
+                success: true,
+                data: response.data,
+            };
+        } catch (error) {
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                'Failed to fetch medical history.';
+
+            return {
+                success: false,
+                error: message,
+            };
+        }
+    },
+};
+
+// Chat API helpers for AI assistant
 export const chatAPI = {
-    startSession: async (userId) => {
+    // Start a new chat session with initial free-text symptoms
+    start: async (rawSymptoms) => {
         try {
-            const response = await API.post('/chat/start', { user_id: userId });
-            return { success: true, data: response.data };
+            const response = await api.post('/chat/start', { raw_symptoms: rawSymptoms });
+            return {
+                success: true,
+                data: response.data,
+            };
         } catch (error) {
-            return { 
-                success: false, 
-                error: error.response?.data?.error || 'Failed to start chat' 
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                'Failed to start chat session.';
+
+            return {
+                success: false,
+                error: message,
             };
         }
     },
 
-    sendMessage: async (messageData) => {
+    // Continue an existing chat session by answering a follow-up question
+    continue: async ({ session_id, symptom_token, has_symptom, severity }) => {
         try {
-            const response = await API.post('/chat/message', messageData);
-            return { success: true, data: response.data };
+            const response = await api.post('/chat/continue', {
+                session_id,
+                symptom_token,
+                has_symptom,
+                severity,
+            });
+            return {
+                success: true,
+                data: response.data,
+            };
         } catch (error) {
-            return { 
-                success: false, 
-                error: error.response?.data?.error || 'Failed to send message' 
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                'Failed to continue chat session.';
+
+            return {
+                success: false,
+                error: message,
             };
         }
-    }
+    },
+
+    // (Optional) Fetch recent chat sessions for history view
+    getSessions: async () => {
+        try {
+            const response = await api.get('/chat/sessions');
+            return {
+                success: true,
+                data: response.data,
+            };
+        } catch (error) {
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                'Failed to fetch chat sessions.';
+
+            return {
+                success: false,
+                error: message,
+            };
+        }
+    },
 };
 
-// Health check
-export const checkHealth = async () => {
-    try {
-        const response = await API.get('/health');
-        return response.data;
-    } catch (error) {
-        return { status: 'error', message: error.message };
-    }
-};
-
-export default API;
+export default api;

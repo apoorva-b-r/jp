@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    pincode VARCHAR(6),
+    full_name VARCHAR(255),
     age INTEGER,
+    gender VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -18,14 +21,26 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS user_medical_history (
     history_id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users (user_id) ON DELETE CASCADE,
+    age INTEGER,
     known_allergies TEXT,
     major_illnesses_faced TEXT,
     chronic_diseases TEXT,
+    genetic_diseases TEXT,
     is_skipped BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (user_id)
 );
+
+-- If tables already exist (e.g., upgrading an existing DB), ensure new columns exist
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS full_name VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS pincode VARCHAR(20),
+    ADD COLUMN IF NOT EXISTS gender VARCHAR(50);
+
+ALTER TABLE user_medical_history
+    ADD COLUMN IF NOT EXISTS age INTEGER,
+    ADD COLUMN IF NOT EXISTS genetic_diseases TEXT;
 
 -- Chat sessions table
 CREATE TABLE IF NOT EXISTS chat_sessions (
@@ -116,3 +131,6 @@ SELECT COUNT(*) as department_count FROM department_mapping;
 SELECT department_name, urgency_level
 FROM department_mapping
 ORDER BY urgency_level DESC;
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS pincode VARCHAR(6);

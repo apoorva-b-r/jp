@@ -8,24 +8,56 @@ import { MedicalHistoryPage } from './components/MedicalHistoryPage';
 import AiAssistantPage from './components/AiAssistantPage';
 import LoggedSymptomsPage from './components/LoggedSymptomsPage';
 import ProfilePage from './components/ProfilePage';
+import { authAPI, historyAPI } from './services/api';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
 
-  const handleSignUp = (username, email, password) => {
-    console.log('Sign up:', { username, email, password });
-    setUserData({ username, email });
+  // Called by SignUpPage after a successful backend signup
+  const handleSignUp = (user, token) => {
+    console.log('Sign up (from backend):', user);
+    if (token) {
+      localStorage.setItem('token', token);
+    }
+    localStorage.setItem('user', JSON.stringify(user));
+    setUserData(user);
     setIsLoggedIn(true);
-    setCurrentPage('medical-history');
+    setCurrentPage('ai-assistant');
   };
 
-  const handleSignIn = (username, password) => {
-    console.log('Sign in:', { username, password });
-    setUserData({ username, email: `${username}@example.com` });
+  // Called by SignInPage with credentials; talks to backend login
+  const handleSignIn = async (username, password) => {
+    console.log('Sign in attempt:', { username });
+
+    const result = await authAPI.login({ username, password });
+
+    if (!result.success) {
+      // Let the SignInPage display a friendly error
+      return {
+        success: false,
+        error: result.error || 'Invalid username or password.',
+      };
+    }
+
+    const { token, user, redirect_to } = result.data;
+
+    if (token) {
+      localStorage.setItem('token', token);
+    }
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+      setUserData(user);
+    }
+
     setIsLoggedIn(true);
-    setCurrentPage('medical-history');
+
+    // Always take users to the main app; medical history is optional
+    // and accessible via the Medical History tab when clicked.
+    setCurrentPage('ai-assistant');
+
+    return { success: true };
   };
 
   const handleLogout = () => {
@@ -34,13 +66,33 @@ function App() {
     setCurrentPage('home');
   };
 
-  const handleMedicalHistorySubmit = (data) => {
+  const handleMedicalHistorySubmit = async (data) => {
     console.log('Medical history submitted:', data);
+
+    const payload = {
+      chronic_diseases: data.chronicDiseases || [],
+      genetic_diseases: data.geneticDiseases || [],
+      is_skipped: false,
+    };
+
+    const result = await historyAPI.save(payload);
+
+    if (!result.success) {
+      alert(result.error || 'Failed to save medical history.');
+      return;
+    }
+
     setCurrentPage('ai-assistant');
   };
 
-  const handleMedicalHistorySkip = () => {
+  const handleMedicalHistorySkip = async () => {
     console.log('Medical history skipped');
+
+    // Mark history as skipped for this user; we don't
+    // send other fields so existing values (if any) are
+    // not unintentionally modified by the backend logic.
+    await historyAPI.save({ is_skipped: true });
+
     setCurrentPage('ai-assistant');
   };
 
@@ -84,11 +136,11 @@ function App() {
           onLogout={handleLogout}
         />
       )}
-      
+
       <main className="flex-grow">
         {renderPage()}
       </main>
-      
+
       {shouldShowHeaderFooter && <Footer />}
     </div>
   );
@@ -102,7 +154,7 @@ function DashboardPlaceholder({ username }) {
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200 text-center">
           <h2 className="text-gray-900 mb-4">Welcome, {username}!</h2>
           <p className="text-gray-600 mb-6">
-            You have successfully completed the onboarding process. The symptom input dashboard 
+            You have successfully completed the onboarding process. The symptom input dashboard
             would appear here where you can start analyzing your symptoms and getting healthcare guidance.
           </p>
           <div className="bg-[#F0F9FF] border border-[#BAE6FD] rounded-lg p-6">

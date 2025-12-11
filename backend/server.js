@@ -12,8 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 5000; // Changed from 3000 to 5000 (standard for backend)
 
 // CORS Configuration - Allow frontend to connect
+// Vite dev server runs on http://localhost:5173 by default
 const corsOptions = {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000', // React frontend URL
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
@@ -38,8 +39,8 @@ app.use('/api/history', historyRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
-    res.json({ 
-        message: 'Healthcare Chatbot API', 
+    res.json({
+        message: 'Healthcare Chatbot API',
         version: '1.0.0',
         endpoints: {
             auth: '/api/auth/register, /api/auth/login',
@@ -53,12 +54,12 @@ app.get('/', (req, res) => {
 // Health check endpoint (with database check)
 app.get('/api/health', async (req, res) => {
     const db = require('./db/pg_connector');
-    
+
     try {
         // Test database connection
         const result = await db.query('SELECT NOW()');
-        
-        res.json({ 
+
+        res.json({
             status: 'healthy',
             database: 'connected',
             timestamp: result.rows[0].now,
@@ -66,7 +67,7 @@ app.get('/api/health', async (req, res) => {
         });
     } catch (error) {
         console.error('Health check failed:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             status: 'error',
             database: 'disconnected',
             message: 'Database connection failed',
@@ -77,8 +78,8 @@ app.get('/api/health', async (req, res) => {
 
 // Simple health check (no database)
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
+    res.json({
+        status: 'OK',
         message: 'Healthcare API is running',
         uptime: process.uptime()
     });
@@ -87,13 +88,13 @@ app.get('/health', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error occurred:', err.stack);
-    
+
     // Don't expose internal error details in production
-    const errorMessage = process.env.NODE_ENV === 'production' 
-        ? 'Something went wrong!' 
+    const errorMessage = process.env.NODE_ENV === 'production'
+        ? 'Something went wrong!'
         : err.message;
-    
-    res.status(err.status || 500).json({ 
+
+    res.status(err.status || 500).json({
         error: 'Internal Server Error',
         message: errorMessage,
         ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
@@ -102,10 +103,10 @@ app.use((err, req, res, next) => {
 
 // 404 handler - Must be last
 app.use((req, res) => {
-    res.status(404).json({ 
+    res.status(404).json({
         error: 'Route not found',
         path: req.path,
-        method: req.method 
+        method: req.method
     });
 });
 

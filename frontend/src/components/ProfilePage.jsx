@@ -18,15 +18,16 @@ export default function ProfilePage({ user, onNavigate }) {
 
   // user coming from DB or signup
   const userData = {
-    fullName: user?.fullName || "Unknown User",
-    username: user?.username || "unknown",
+    // prefer backend's `full_name`, fall back to camelCase or username
+    fullName: user?.full_name || user?.fullName || user?.fullName || user?.username || "Unknown User",
+    username: user?.username || user?.user_name || "unknown",
     email: user?.email || "not provided",
-    age: user?.age || "N/A",
-    gender: user?.gender || "N/A",
+    age: user?.age ?? "N/A",
+    gender: user?.gender ?? "N/A",
     allergies: user?.allergies || "",
-    majorIllnesses: user?.majorIllnesses || "",
-    chronicDiseases: user?.selectedDiseases || [],
-    geneticDiseases: user?.geneticDiseases || [],
+    majorIllnesses: user?.majorIllnesses || user?.major_illnesses || "",
+    chronicDiseases: user?.selectedDiseases || user?.chronic_diseases || [],
+    geneticDiseases: user?.geneticDiseases || user?.genetic_diseases || [],
   };
 
   return (
@@ -67,7 +68,10 @@ export default function ProfilePage({ user, onNavigate }) {
         </nav>
 
         <div className="p-4 border-t border-gray-200">
-          <button className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition">
+          <button
+            onClick={() => onNavigate("home")}
+            className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
             Logout
           </button>
         </div>

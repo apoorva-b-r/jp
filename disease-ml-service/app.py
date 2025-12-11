@@ -141,7 +141,10 @@ def predict():
                     medical_history_note = f"Note: Symptoms show a {(score*100):.0f}% overlap with your pre-existing condition: '{condition}'."
                     break
         
-        is_final = (top_confidence >= (98.0 if question_counter == 0 else 85.0) and question_counter > 0) or question_counter >= 7
+        # Decide whether we have enough confidence to stop asking questions.
+        # Removed the hard limit of 7 questions so the flow is
+        # driven purely by confidence and available distinguishing symptoms.
+        is_final = top_confidence >= (98.0 if question_counter == 0 else 85.0) and question_counter > 0
         next_question = None
         if not is_final:
             next_symptom_token = get_next_question(probabilities, collected_symptoms, denied_symptoms)

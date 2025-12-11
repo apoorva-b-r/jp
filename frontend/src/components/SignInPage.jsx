@@ -8,29 +8,47 @@ export function SignInPage({ onNavigate, onSignIn }) {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Basic validation
     const newErrors = {};
-    
+
     if (!formData.username) {
       newErrors.username = 'Username is required';
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     }
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
-    // Success
+
     setErrors({});
-    onSignIn(formData.username, formData.password);
+    setApiError('');
+
+    if (!onSignIn) return;
+
+    setLoading(true);
+    try {
+      const result = await onSignIn(formData.username, formData.password);
+
+      if (!result?.success) {
+        setApiError(result?.error || 'Invalid username or password.');
+      }
+      // On success, App will navigate away from this page.
+    } catch (err) {
+      console.error('Sign in error:', err);
+      setApiError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,6 +71,13 @@ export function SignInPage({ onNavigate, onSignIn }) {
             <p className="text-gray-600 mt-2">Sign in to your account</p>
           </div>
 
+          {/* API Error */}
+          {apiError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{apiError}</p>
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Username */}
@@ -67,10 +92,10 @@ export function SignInPage({ onNavigate, onSignIn }) {
                   id="username"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className={`w-full pl-10 pr-4 py-3 border ${
-                    errors.username ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent bg-white`}
+                  className={`w-full pl-10 pr-4 py-3 border ${errors.username ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent bg-white`}
                   placeholder="Enter your username"
+                  disabled={loading}
                 />
               </div>
               {errors.username && <p className="text-red-500 mt-1">{errors.username}</p>}
@@ -88,15 +113,16 @@ export function SignInPage({ onNavigate, onSignIn }) {
                   id="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className={`w-full pl-10 pr-12 py-3 border ${
-                    errors.password ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent bg-white`}
+                  className={`w-full pl-10 pr-12 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent bg-white`}
                   placeholder="Enter your password"
+                  disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={loading}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -118,9 +144,11 @@ export function SignInPage({ onNavigate, onSignIn }) {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-3 bg-[#0EA5E9] text-white rounded-lg hover:bg-[#0369A1] transition-colors shadow-md"
+              className={`w-full py-3 bg-[#0EA5E9] text-white rounded-lg hover:bg-[#0369A1] transition-colors shadow-md ${loading ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
+              disabled={loading}
             >
-              Log In
+              {loading ? 'Logging In...' : 'Log In'}
             </button>
           </form>
 

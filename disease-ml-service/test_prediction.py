@@ -186,8 +186,11 @@ def run_test_loop():
             
             top_confidence = top_probs[0, 0].item() * 100
             confidence_threshold = 98.0 if question_counter == 0 else 85.0
-            if (top_confidence >= confidence_threshold and question_counter > 0) or question_counter >= 7:
-                print(f"\n{'✅ FINAL DIAGNOSIS' if top_confidence >= confidence_threshold else '🛑 QUESTION LIMIT REACHED'}. Recommending specialist based on current certainty.")
+            # Removed the hard 7-question limit; stop only when
+            # confidence is high enough or there are no more
+            # distinguishing questions to ask.
+            if top_confidence >= confidence_threshold and question_counter > 0:
+                print("\n✅ FINAL DIAGNOSIS. Recommending specialist based on current certainty.")
                 break
             next_symptom_to_ask = get_next_question(probabilities, collected_symptoms, denied_symptoms)
             if next_symptom_to_ask:

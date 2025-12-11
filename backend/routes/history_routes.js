@@ -4,9 +4,26 @@ const pool = require('../db/pg_connector');
 const { authenticateToken } = require('./auth_routes');
 
 // Save or update medical history
+// We now only store lists of chronic and genetic diseases
+// plus the is_skipped flag. Other legacy fields are ignored.
 router.post('/save', authenticateToken, async (req, res) => {
-  const { known_allergies, major_illnesses_faced, chronic_diseases, is_skipped } = req.body;
+  const { chronic_diseases, genetic_diseases, is_skipped } = req.body;
+
   const user_id = req.user.user_id;
+
+  const chronicStr = Array.isArray(chronic_diseases)
+    ? chronic_diseases.join(', ')
+    : chronic_diseases || null;
+
+  const geneticStr = Array.isArray(genetic_diseases)
+    ? genetic_diseases.join(', ')
+    : genetic_diseases || null;
+
+  const normalized = {
+    chronic_diseases: chronicStr,
+    genetic_diseases: geneticStr,
+    is_skipped: !!is_skipped,
+  };
 
   try {
     // Check if history exists
@@ -20,26 +37,38 @@ router.post('/save', authenticateToken, async (req, res) => {
       // Update existing
       result = await pool.query(
         `UPDATE user_medical_history 
-         SET known_allergies = $1, major_illnesses_faced = $2, 
-             chronic_diseases = $3, is_skipped = $4
-         WHERE user_id = $5
+         SET chronic_diseases = $1,
+             genetic_diseases = $2,
+             is_skipped = $3,
+             updated_at = NOW()
+         WHERE user_id = $4
          RETURNING *`,
-        [known_allergies, major_illnesses_faced, chronic_diseases, is_skipped || false, user_id]
+        [
+          normalized.chronic_diseases,
+          normalized.genetic_diseases,
+          normalized.is_skipped,
+          user_id,
+        ]
       );
     } else {
       // Insert new
       result = await pool.query(
         `INSERT INTO user_medical_history 
-         (user_id, known_allergies, major_illnesses_faced, chronic_diseases, is_skipped) 
-         VALUES ($1, $2, $3, $4, $5) 
+         (user_id, chronic_diseases, genetic_diseases, is_skipped) 
+         VALUES ($1, $2, $3, $4) 
          RETURNING *`,
-        [user_id, known_allergies, major_illnesses_faced, chronic_diseases, is_skipped || false]
+        [
+          user_id,
+          normalized.chronic_diseases,
+          normalized.genetic_diseases,
+          normalized.is_skipped,
+        ]
       );
     }
 
     res.json({
       message: 'Medical history saved successfully',
-      history: result.rows[0]
+      history: result.rows[0],
     });
   } catch (error) {
     console.error('Medical history save error:', error);

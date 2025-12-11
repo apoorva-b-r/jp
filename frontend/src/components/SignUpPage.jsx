@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Activity, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { authAPI } from '../services/api';
 
-export function SignUpPage({ onNavigate }) {
+export function SignUpPage({ onNavigate, onSignUp }) {
   const [formData, setFormData] = useState({
     fullName: '',
     age: '',
     gender: '',
+    pincode: '',
     username: '',
     email: '',
     password: '',
@@ -61,6 +62,13 @@ export function SignUpPage({ onNavigate }) {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
+    // Pincode (required on frontend)
+    if (!formData.pincode) {
+      newErrors.pincode = 'Pincode is required';
+    } else if (!/^[0-9]{6}$/.test(String(formData.pincode))) {
+      newErrors.pincode = 'Pincode must be a 6 digit number';
+    }
+
     // Confirm Password
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
@@ -82,7 +90,8 @@ export function SignUpPage({ onNavigate }) {
         password: formData.password,
         confirmPassword: formData.confirmPassword,
         fullName: formData.fullName,
-        age: parseInt(formData.age),
+          age: parseInt(formData.age),
+          pincode: formData.pincode ? String(formData.pincode) : null,
         gender: formData.gender
       });
 
@@ -90,6 +99,12 @@ export function SignUpPage({ onNavigate }) {
         // Store token and user data
         localStorage.setItem('token', result.data.token);
         localStorage.setItem('user', JSON.stringify(result.data.user));
+
+        // Inform parent App about successful signup so it can
+        // update global auth state and user profile
+        if (onSignUp) {
+          onSignUp(result.data.user, result.data.token);
+        }
 
         // Show success message
         alert('✅ Account created successfully!');
@@ -145,9 +160,8 @@ export function SignUpPage({ onNavigate }) {
                 type="text"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className={`w-full px-4 py-3 border ${
-                  errors.fullName ? 'border-red-500' : 'border-gray-300'
-                } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
+                className={`w-full px-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
                 placeholder="Enter your full name"
                 disabled={loading}
               />
@@ -163,9 +177,8 @@ export function SignUpPage({ onNavigate }) {
                 max="120"
                 value={formData.age}
                 onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                className={`w-full px-4 py-3 border ${
-                  errors.age ? 'border-red-500' : 'border-gray-300'
-                } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
+                className={`w-full px-4 py-3 border ${errors.age ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
                 placeholder="Enter your age"
                 disabled={loading}
               />
@@ -178,9 +191,8 @@ export function SignUpPage({ onNavigate }) {
               <select
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                className={`w-full px-4 py-3 border ${
-                  errors.gender ? 'border-red-500' : 'border-gray-300'
-                } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
+                className={`w-full px-4 py-3 border ${errors.gender ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
                 disabled={loading}
               >
                 <option value="">Select gender</option>
@@ -189,6 +201,24 @@ export function SignUpPage({ onNavigate }) {
                 <option value="Other">Other</option>
               </select>
               {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
+            </div>
+
+            {/* Pincode (required) */}
+            <div>
+              <label className="block text-gray-700 mb-2 font-medium">Pincode (6 digits) <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={formData.pincode}
+                onChange={(e) => setFormData({ ...formData, pincode: e.target.value.replace(/[^0-9]/g, '') })}
+                className={`w-full px-4 py-3 border ${errors.pincode ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
+                placeholder="Enter your 6-digit pincode"
+                required
+                disabled={loading}
+              />
+              {errors.pincode && <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>}
             </div>
 
             {/* Username */}
@@ -201,9 +231,8 @@ export function SignUpPage({ onNavigate }) {
                   id="username"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className={`w-full pl-10 pr-4 py-3 border ${
-                    errors.username ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
+                  className={`w-full pl-10 pr-4 py-3 border ${errors.username ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
                   placeholder="Enter your username"
                   disabled={loading}
                 />
@@ -221,9 +250,8 @@ export function SignUpPage({ onNavigate }) {
                   id="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className={`w-full pl-10 pr-4 py-3 border ${
-                    errors.email ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
+                  className={`w-full pl-10 pr-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
                   placeholder="Enter your email"
                   disabled={loading}
                 />
@@ -241,9 +269,8 @@ export function SignUpPage({ onNavigate }) {
                   id="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className={`w-full pl-10 pr-12 py-3 border ${
-                    errors.password ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
+                  className={`w-full pl-10 pr-12 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
                   placeholder="Enter your password"
                   disabled={loading}
                 />
@@ -269,9 +296,8 @@ export function SignUpPage({ onNavigate }) {
                   id="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className={`w-full pl-10 pr-12 py-3 border ${
-                    errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
+                  className={`w-full pl-10 pr-12 py-3 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] bg-white`}
                   placeholder="Confirm your password"
                   disabled={loading}
                 />
@@ -290,9 +316,8 @@ export function SignUpPage({ onNavigate }) {
             {/* Submit */}
             <button
               type="submit"
-              className={`w-full py-3 bg-[#10B981] text-white rounded-lg hover:bg-[#059669] transition-colors shadow-md font-semibold ${
-                loading ? 'opacity-60 cursor-not-allowed' : ''
-              }`}
+              className={`w-full py-3 bg-[#10B981] text-white rounded-lg hover:bg-[#059669] transition-colors shadow-md font-semibold ${loading ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
               disabled={loading}
             >
               {loading ? (

@@ -6,7 +6,7 @@ const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'healthcare_db',
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'admin',
+  password: process.env.DB_PASSWORD || 'Hulasi007',
   port: process.env.DB_PORT || 5432,
   // No SSL needed for local connection
   max: 20, // Maximum number of clients in the pool

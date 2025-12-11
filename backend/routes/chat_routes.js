@@ -176,18 +176,21 @@ router.post('/continue', authenticateToken, async (req, res) => {
       collected_symptoms[s] = 2; // Default severity
     });
 
-    let denied_symptoms = [];
     let questions_asked = [...state.questions_asked];
 
     // Update based on response
     if (has_symptom) {
       const severityValue = severity || 3;
       collected_symptoms[symptom_token] = severityValue;
-    } else {
-      denied_symptoms.push(symptom_token);
     }
 
-    questions_asked.push(symptom_token);
+    if (!questions_asked.includes(symptom_token)) {
+      questions_asked.push(symptom_token);
+    }
+
+    // Derive denied symptoms across the whole session: any asked symptom
+    // that is not present in collected_symptoms is treated as denied.
+    const denied_symptoms = questions_asked.filter(token => !collected_symptoms[token]);
 
     // Check for emergency after update
     const isEmergency = checkEmergency(Object.keys(collected_symptoms));
@@ -292,11 +295,20 @@ router.post('/continue', authenticateToken, async (req, res) => {
 router.get('/sessions', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT session_id, started_at, ended_at, final_department, 
-              final_urgency, is_emergency, status
-       FROM chat_sessions 
-       WHERE user_id = $1 
-       ORDER BY started_at DESC 
+      `SELECT 
+          cs.session_id,
+          cs.started_at,
+          cs.ended_at,
+          cs.final_department,
+          cs.final_urgency,
+          cs.is_emergency,
+          cs.status,
+          ss.predicted_department,
+          ss.symptoms_collected
+       FROM chat_sessions cs
+       LEFT JOIN session_state ss ON ss.session_id = cs.session_id
+       WHERE cs.user_id = $1 
+       ORDER BY cs.started_at DESC 
        LIMIT 20`,
       [req.user.user_id]
     );
@@ -315,14 +327,14 @@ function parseSymptoms(rawText) {
     .toLowerCase()
     .replace(/[_-]/g, ' ')
     .replace(/[^a-z0-9\s,]/g, '');
-  
+
   const tokens = cleaned.split(/[\s,]+/).filter(t => t.length > 2);
   return [...new Set(tokens)];
 }
 
 function checkEmergency(symptoms) {
-  return symptoms.some(symptom => 
-    EMERGENCY_SYMPTOMS.some(emergency => 
+  return symptoms.some(symptom =>
+    EMERGENCY_SYMPTOMS.some(emergency =>
       symptom.includes(emergency) || emergency.includes(symptom)
     )
   );
@@ -377,6 +389,10 @@ async function finalizeSession(session_id, predicted_disease, confidence) {
     [department, urgency, session_id]
   );
 
+  const readableDisease = typeof predicted_disease === 'string'
+    ? predicted_disease.replace(/_/g, ' ')
+    : predicted_disease;
+
   return {
     session_id,
     is_final: true,
@@ -384,7 +400,7 @@ async function finalizeSession(session_id, predicted_disease, confidence) {
     recommended_department: department,
     urgency_level: urgency,
     confidence: confidence,
-    message: `Based on your symptoms, we recommend consulting ${department}. Urgency level: ${urgency}`
+    message: `Our preliminary diagnosis is ${readableDisease}. We recommend consulting ${department}. Urgency level: ${urgency}.`
   };
 }
 

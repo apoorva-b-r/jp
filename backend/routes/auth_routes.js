@@ -1,5 +1,5 @@
 const express = require("express");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../db/pg_connector.js"); // your PostgreSQL pool instance
 
@@ -27,7 +27,7 @@ function authenticateToken(req, res, next) {
 // REGISTER (Signup) - Updated with fullName, age, gender
 router.post("/register", async (req, res) => {
     try {
-        const { username, email, password, confirmPassword, fullName, age, gender } = req.body;
+        const { username, email, password, confirmPassword, fullName, age, gender, pincode } = req.body;
 
         // Validation
         if (!username || !email || !password) {
@@ -44,12 +44,12 @@ router.post("/register", async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert into users table with new fields
+        // Insert into users table with new fields (including pincode)
         const userResult = await db.query(
-            `INSERT INTO users (username, email, password_hash, full_name, age, gender)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO users (username, email, password_hash, full_name, age, gender, pincode)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING user_id, username, email, full_name, age, gender, created_at`,
-            [username, email, hashedPassword, fullName || null, age || null, gender || null]
+            [username, email, hashedPassword, fullName || null, age || null, gender || null, pincode || null]
         );
 
         const newUser = userResult.rows[0];
@@ -63,17 +63,17 @@ router.post("/register", async (req, res) => {
 
         // Generate JWT token
         const token = jwt.sign(
-            { 
-                user_id: newUser.user_id, 
+            {
+                user_id: newUser.user_id,
                 username: newUser.username,
-                email: newUser.email 
+                email: newUser.email
             },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );
 
-        return res.status(201).json({ 
-            message: "Account created successfully", 
+        return res.status(201).json({
+            message: "Account created successfully",
             token: token,
             user: {
                 user_id: newUser.user_id,
@@ -87,7 +87,7 @@ router.post("/register", async (req, res) => {
 
     } catch (error) {
         console.error("Signup error:", error);
-        
+
         if (error.code === "23505") { // Unique constraint violation
             if (error.constraint && error.constraint.includes("username")) {
                 return res.status(409).json({ error: "Username already exists" });
@@ -96,7 +96,7 @@ router.post("/register", async (req, res) => {
             }
             return res.status(409).json({ error: "Username or email already exists" });
         }
-        
+
         return res.status(500).json({ error: "Server error. Please try again." });
     }
 });
@@ -131,10 +131,10 @@ router.post("/login", async (req, res) => {
 
         // Generate JWT token
         const token = jwt.sign(
-            { 
-                user_id: user.user_id, 
+            {
+                user_id: user.user_id,
                 username: user.username,
-                email: user.email 
+                email: user.email
             },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
